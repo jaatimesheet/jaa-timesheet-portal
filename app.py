@@ -16,7 +16,7 @@ import threading
 _db_lock = threading.local()  # thread-local storage for DB path
 
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, str(BASE_DIR.parent))
+sys.path.insert(0, str(BASE_DIR))
 
 # ── Branch configuration ───────────────────────────────────────────────────────
 # ── Logo base64 (embedded at build time) ──────────────────────────────────────
@@ -29,7 +29,7 @@ BRANCHES = {
     "indore": "JAA - Indore",
     "delhi":  "JAA - Delhi",
 }
-DATA_ROOT = BASE_DIR.parent / "data"   # /data subfolder next to JAA_Timesheet_v17.py
+DATA_ROOT = BASE_DIR / "data"   # /data subfolder next to JAA_Timesheet_v17.py
 DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
 def branch_db_path(branch_key: str):
@@ -414,7 +414,7 @@ def index():
 def login():
     if not DB_READY:
         return render_template("error.html",
-            msg=f"JAA_Timesheet_v17.py not found in: {BASE_DIR.parent}<br>{_import_error}")
+            msg=f"JAA_Timesheet_v17.py not found in: {BASE_DIR}<br>{_import_error}")
     error   = None
     timeout = request.args.get("timeout")
     if request.method == "POST":
@@ -4357,7 +4357,7 @@ if __name__ == "__main__":
     print("=" * 52)
     if not DB_READY:
         print(f"\n  ERROR: JAA_Timesheet_v17.py not found!")
-        print(f"  Expected location: {BASE_DIR.parent}")
+        print(f"  Expected location: {BASE_DIR}")
         print(f"  Detail: {_import_error}")
         input("\n  Press Enter to exit...")
         sys.exit(1)
