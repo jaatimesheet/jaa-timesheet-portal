@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}My Leaves — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Leaves</span>
+  <span class="topbar-sub">Apply and track leave requests</span>
+  <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('apply-modal')">➕ Apply for Leave</button>
+</div>
+<div class="page-content">
+  {% if success %}<div class="alert alert-success">✓ {{ success }}</div>{% endif %}
+  {% if error %}<div class="alert alert-danger">⚠ {{ error }}</div>{% endif %}
+  <div class="card">
+    <div class="card-header"><span class="card-title">🏖 My Leave History</span><span class="badge badge-navy">{{ leaves|length }} records</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td><span class="badge badge-info">{{ l.leave_type or 'Leave' }}</span></td>
+          <td style="font-weight:600">{{ l.start_date }}</td>
+          <td style="font-weight:600">{{ l.end_date }}</td>
+          <td>{{ l.days or '—' }}</td>
+          <td style="color:var(--text-mid)">{{ l.reason or '—' }}</td>
+          <td>
+            {% if l.status=='Approved' %}<span class="badge badge-success">✓ Approved</span>
+            {% elif l.status=='Rejected' %}<span class="badge badge-danger">✕ Rejected</span>
+            {% else %}<span class="badge badge-warning">⏳ Pending</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-light)">No leave records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+<div class="modal-overlay" id="apply-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">🏖 Apply for Leave</span><button class="modal-close" onclick="closeModal('apply-modal')">×</button></div>
+    <form method="POST" action="/my-leaves">
+      <div class="modal-body">
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">From Date *</label><input type="date" name="start" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">To Date *</label><input type="date" name="end" class="form-control" required></div>
+        </div>
+        <div class="form-group"><label class="form-label">Leave Type</label>
+          <select name="leave_type" class="form-control">
+            <option>Casual Leave</option><option>Sick Leave</option><option>Earned Leave</option><option>Unpaid Leave</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Reason</label><input type="text" name="reason" class="form-control" placeholder="Reason for leave"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('apply-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

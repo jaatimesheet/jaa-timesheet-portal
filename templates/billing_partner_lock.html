@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Partner Access — Billing{% endblock %}
+
+{% block extra_head %}
+<style>
+.lock-wrap{min-height:calc(100vh - 80px);display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+.lock-card{background:#fff;border:1px solid #dde3eb;border-radius:16px;max-width:400px;width:100%;padding:40px 36px;text-align:center;box-shadow:0 4px 24px rgba(13,38,71,0.08);}
+.lock-icon{font-size:48px;margin-bottom:16px;}
+.lock-title{font-family:'DM Serif Display',serif;font-size:22px;color:#0d2647;margin-bottom:8px;}
+.lock-sub{font-size:13.5px;color:#6b7280;line-height:1.6;margin-bottom:28px;}
+.pin-row{display:flex;gap:8px;margin-bottom:16px;}
+.pin-row input{flex:1;padding:11px 14px;border:1.5px solid #c8d2de;border-radius:8px;font-size:15px;font-family:'DM Sans',sans-serif;letter-spacing:4px;text-align:center;outline:none;transition:border-color 0.15s;}
+.pin-row input:focus{border-color:#0d2647;}
+.btn-unlock{width:100%;padding:13px;border-radius:8px;background:#0d2647;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;}
+.btn-unlock:hover{background:#162d52;}
+.btn-unlock:disabled{opacity:0.6;cursor:not-allowed;}
+.lock-err{font-size:13px;color:#dc2626;margin-top:10px;min-height:18px;}
+.lock-note{font-size:12px;color:#9ca3af;margin-top:20px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lock-wrap">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">Access Required</div>
+    <div class="lock-sub">
+      This section is restricted to Partners only.<br>
+      Enter the Partner PIN to continue.
+    </div>
+
+    <div class="pin-row">
+      <input type="password" id="partnerPin" maxlength="6" placeholder="• • • •"
+             onkeydown="if(event.key==='Enter') unlockBilling()">
+    </div>
+    <button class="btn-unlock" id="unlockBtn" onclick="unlockBilling()">Unlock Billing →</button>
+    <div class="lock-err" id="lockErr"></div>
+    <div class="lock-note">Contact the Admin to set or reset this PIN.</div>
+  </div>
+</div>
+
+<script>
+async function unlockBilling() {
+  const pin = document.getElementById('partnerPin').value.trim();
+  const err = document.getElementById('lockErr');
+  const btn = document.getElementById('unlockBtn');
+  err.textContent = '';
+  if (!pin) { err.textContent = 'Please enter the Partner PIN.'; return; }
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  try {
+    const r = await fetch('/api/billing/verify-partner', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({pin})
+    });
+    const j = await r.json();
+    if (j.ok) {
+      window.location.href = '/billing/drafts';
+    } else {
+      err.textContent = 'Incorrect PIN. Please try again.';
+      document.getElementById('partnerPin').value = '';
+      document.getElementById('partnerPin').focus();
+    }
+  } catch {
+    err.textContent = 'Network error. Please try again.';
+  }
+  btn.disabled = false; btn.textContent = 'Unlock Billing →';
+}
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('partnerPin').focus();
+});
+</script>
+{% endblock %}

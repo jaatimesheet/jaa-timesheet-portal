@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Finance Controls — JAA Partner{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page shell ──────────────────────────────────────────────────────────── */
+.fc-wrap { max-width:860px;margin:0 auto;padding:32px 20px 80px }
+
+/* ── Lock screen ─────────────────────────────────────────────────────────── */
+.fc-lock-outer {
+  min-height:calc(100vh - 80px);display:flex;align-items:center;
+  justify-content:center;padding:24px
+}
+.fc-lock-card {
+  background:#fff;border:1.5px solid var(--border);border-radius:16px;
+  padding:40px 36px 36px;width:100%;max-width:420px;
+  box-shadow:0 8px 32px rgba(0,0,0,.08);text-align:center
+}
+.fc-lock-icon {
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,var(--navy),#2d4a7a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin:0 auto 20px
+}
+.fc-lock-title {
+  font-family:'DM Serif Display',serif;font-size:20px;color:var(--navy);
+  margin-bottom:6px
+}
+.fc-lock-sub { font-size:13px;color:var(--text-light);margin-bottom:28px }
+
+.fc-pin-input {
+  width:100%;text-align:center;font-size:22px;letter-spacing:8px;
+  padding:12px 16px;border:2px solid var(--border);border-radius:var(--r-sm);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;
+  background:var(--surface)
+}
+.fc-pin-input:focus { border-color:var(--navy) }
+.fc-error {
+  background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--r-sm);
+  padding:9px 14px;margin:12px 0 0;font-size:13px;color:#991B1B;
+  text-align:left;display:flex;align-items:center;gap:7px
+}
+.fc-success {
+  background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r-sm);
+  padding:9px 14px;margin:12px 0 0;font-size:13px;color:#166534;
+  text-align:left;display:flex;align-items:center;gap:7px
+}
+
+/* ── Dashboard cards ─────────────────────────────────────────────────────── */
+.fc-header {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;flex-wrap:wrap;gap:12px
+}
+.fc-header h2 {
+  font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy);margin:0
+}
+.btn-lock {
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:var(--r-sm);
+  background:#FEE2E2;color:#991B1B;border:1.5px solid #FECACA;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;text-decoration:none
+}
+.btn-lock:hover { background:#FCA5A5;border-color:#F87171 }
+
+.fc-card {
+  background:#fff;border:1.5px solid var(--border);border-radius:14px;
+  padding:24px 24px 22px;margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.04)
+}
+.fc-card-title {
+  font-size:15px;font-weight:700;color:var(--navy);
+  display:flex;align-items:center;gap:9px;margin-bottom:18px;
+  padding-bottom:12px;border-bottom:2px solid var(--border)
+}
+.fc-row { display:flex;align-items:center;gap:12px;flex-wrap:wrap }
+.fc-label { font-size:13px;font-weight:600;color:var(--text-mid);white-space:nowrap }
+.fc-select {
+  flex:1;min-width:160px;max-width:220px;padding:8px 12px;
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--navy);
+  background:#fff;outline:none;cursor:pointer
+}
+.fc-select:focus { border-color:var(--navy) }
+
+/* toggle */
+.fc-toggle { display:flex;align-items:center;gap:8px }
+.fc-toggle-label { font-size:13px;font-weight:600;color:var(--text-mid) }
+.toggle-wrap {
+  display:flex;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:20px;overflow:hidden;
+}
+.toggle-opt {
+  padding:6px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
+  border:none;background:transparent;color:var(--text-mid);
+  font-family:'DM Sans',sans-serif;transition:all .15s
+}
+.toggle-opt.active { background:var(--navy);color:#fff }
+
+.fc-btn-row { display:flex;gap:10px;flex-wrap:wrap;margin-top:16px }
+.btn-fc {
+  padding:9px 20px;border-radius:var(--r-sm);border:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:opacity .15s;text-decoration:none
+}
+.btn-fc:hover { opacity:.85 }
+.btn-fc-primary { background:var(--navy);color:#fff }
+.btn-fc-gold    { background:var(--gold);color:var(--navy) }
+.btn-fc-outline {
+  background:#fff;color:var(--navy);
+  border:1.5px solid var(--border)!important
+}
+
+/* pin fields */
+.fc-field-group { margin-bottom:16px }
+.fc-field-label { font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:block }
+.fc-field {
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;transition:border-color .2s;box-sizing:border-box
+}
+.fc-field:focus { border-color:var(--navy) }
+
+/* divider */
+.fc-divider { height:1px;background:var(--border);margin:6px 0 18px }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Finance Controls</span>
+  <span class="topbar-sub">Restricted Access</span>
+</div>
+
+{% if mode == 'set_pin' %}
+{# ─── First-time PIN setup ────────────────────────────────────────────────── #}
+<div class="fc-lock-outer">
+  <div class="fc-lock-card">
+    <div class="fc-lock-icon">🔐</div>
+    <div class="fc-lock-title">Finance Controls — Restricted Access</div>
+    <div class="fc-lock-sub">No PIN has been set yet. Create your Finance Controls PIN to continue.</div>
+
+    {% if error %}
+    <div class="fc-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/partner/finance-controls/unlock" style="margin-top:20px;text-align:left">
+      <input type="hidden" name="action" value="set_pin">
+      <div class="fc-field-group">
+        <label class="fc-field-label">New PIN</label>
+        <input type="password" name="new_pin" class="fc-pin-input" inputmode="numeric"
+               placeholder="••••" maxlength="20" autocomplete="new-password" autofocus>
+      </div>
+      <div class="fc-field-group" style="margin-top:14px">
+        <label class="fc-field-label">Confirm PIN</label>
+        <input type="password" name="confirm_pin" class="fc-pin-input" inputmode="numeric"
+               placeholder="••••" maxlength="20" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-fc btn-fc-primary" style="width:100%;justify-content:center;margin-top:20px;padding:12px">
+        Set PIN &amp; Unlock →
+      </button>
+    </form>
+  </div>
+</div>
+
+{% elif mode == 'unlock' %}
+{# ─── PIN entry screen ────────────────────────────────────────────────────── #}
+<div class="fc-lock-outer">
+  <div class="fc-lock-card">
+    <div class="fc-lock-icon">🔐</div>
+    <div class="fc-lock-title">Finance Controls — Restricted Access</div>
+    <div class="fc-lock-sub">Enter your Finance Controls PIN to continue.</div>
+
+    {% if error %}
+    <div class="fc-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/partner/finance-controls/unlock" style="margin-top:20px">
+      <input type="hidden" name="action" value="verify">
+      <input type="password" name="pin" class="fc-pin-input" inputmode="numeric"
+             placeholder="••••" maxlength="20" autocomplete="current-password" autofocus>
+      <button type="submit" class="btn-fc btn-fc-primary" style="width:100%;justify-content:center;margin-top:16px;padding:12px">
+        Unlock →
+      </button>
+    </form>
+  </div>
+</div>
+
+{% else %}
+{# ─── Unlocked Dashboard ──────────────────────────────────────────────────── #}
+<div class="fc-wrap">
+  <div class="fc-header">
+    <h2>🔐 Finance Controls</h2>
+    <form method="POST" action="/partner/finance-controls/lock" style="margin:0">
+      <button type="submit" class="btn-lock">🔒 Lock Finance Controls</button>
+    </form>
+  </div>
+
+  {# ── Card 1: Bill Register Report ──────────────────────────────────────── #}
+  <div class="fc-card">
+    <div class="fc-card-title">📊 Bill Register Report</div>
+    <div class="fc-row">
+      <span class="fc-label">Financial Year</span>
+      <select id="br-fy" class="fc-select">
+        {% if fy_list %}
+          {% for fy in fy_list %}
+          <option value="{{ fy }}">{{ fy }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">— No finalized FYs —</option>
+        {% endif %}
+      </select>
+    </div>
+    <div class="fc-btn-row">
+      <button class="btn-fc btn-fc-primary" onclick="viewBillRegister()">
+        👁 View Report
+      </button>
+      <button class="btn-fc btn-fc-gold" onclick="downloadBillRegister()">
+        ⬇ Download Excel
+      </button>
+    </div>
+  </div>
+
+  {# ── Card 2: Reimbursement Report ──────────────────────────────────────── #}
+  <div class="fc-card">
+    <div class="fc-card-title">💸 Reimbursement Report</div>
+    <div class="fc-row" style="gap:18px">
+      <span class="fc-label">Financial Year</span>
+      <select id="rr-fy" class="fc-select">
+        {% if fy_list %}
+          {% for fy in fy_list %}
+          <option value="{{ fy }}">{{ fy }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">— No finalized FYs —</option>
+        {% endif %}
+      </select>
+      <div class="fc-toggle">
+        <span class="fc-toggle-label">Consolidated</span>
+        <div class="toggle-wrap">
+          <button class="toggle-opt" id="tog-no" onclick="setConsolidated(0)">No</button>
+          <button class="toggle-opt active" id="tog-yes" onclick="setConsolidated(1)">Yes</button>
+        </div>
+      </div>
+    </div>
+    <div class="fc-btn-row">
+      <button class="btn-fc btn-fc-primary" onclick="viewReimbReport()">
+        👁 View Report
+      </button>
+      <button class="btn-fc btn-fc-gold" onclick="downloadReimbReport()">
+        ⬇ Download Excel
+      </button>
+    </div>
+  </div>
+
+  {# ── Card 3: Change Finance Controls PIN ───────────────────────────────── #}
+  <div class="fc-card">
+    <div class="fc-card-title">🔑 Change Finance Controls PIN</div>
+
+    {% if pin_success %}
+    <div class="fc-success">✓ {{ pin_success }}</div>
+    {% endif %}
+    {% if pin_error %}
+    <div class="fc-error">⚠ {{ pin_error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/partner/finance-controls/change-pin" style="max-width:380px">
+      <div class="fc-field-group">
+        <label class="fc-field-label">Current PIN</label>
+        <input type="password" name="current_pin" class="fc-field" inputmode="numeric"
+               placeholder="Enter current PIN" autocomplete="current-password">
+      </div>
+      <div class="fc-divider"></div>
+      <div class="fc-field-group">
+        <label class="fc-field-label">New PIN</label>
+        <input type="password" name="new_pin" class="fc-field" inputmode="numeric"
+               placeholder="Enter new PIN" autocomplete="new-password">
+      </div>
+      <div class="fc-field-group">
+        <label class="fc-field-label">Confirm New PIN</label>
+        <input type="password" name="confirm_pin" class="fc-field" inputmode="numeric"
+               placeholder="Confirm new PIN" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-fc btn-fc-primary" style="margin-top:4px">
+        Update PIN →
+      </button>
+    </form>
+  </div>
+
+</div><!-- /fc-wrap -->
+
+<script>
+let _consolidated = 1;
+
+function setConsolidated(v) {
+  _consolidated = v;
+  document.getElementById('tog-no').classList.toggle('active', v === 0);
+  document.getElementById('tog-yes').classList.toggle('active', v === 1);
+}
+
+function viewBillRegister() {
+  const fy = document.getElementById('br-fy').value;
+  if (!fy) { alert('No finalized FY available.'); return; }
+  window.location = '/partner/billing-advice/view?fy=' + encodeURIComponent(fy);
+}
+
+function downloadBillRegister() {
+  const fy = document.getElementById('br-fy').value;
+  if (!fy) { alert('No finalized FY available.'); return; }
+  window.location = '/partner/billing-advice/export?fy=' + encodeURIComponent(fy);
+}
+
+function viewReimbReport() {
+  const fy = document.getElementById('rr-fy').value;
+  if (!fy) { alert('No finalized FY available.'); return; }
+  window.open('/partner/reimbursement-report?fy=' + encodeURIComponent(fy) +
+              '&consolidated=' + _consolidated, '_blank');
+}
+
+function downloadReimbReport() {
+  const fy = document.getElementById('rr-fy').value;
+  if (!fy) { alert('No finalized FY available.'); return; }
+  window.location = '/partner/reimbursement-report/export?fy=' + encodeURIComponent(fy) +
+                    '&consolidated=' + _consolidated;
+}
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Billing Drafts — JAA Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+.drafts-wrap{max-width:900px;margin:0 auto;padding:28px 24px 60px;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-header h2{font-family:'DM Serif Display',serif;font-size:22px;color:#0d2647;margin:0;}
+.page-header p{font-size:13px;color:#6b7280;margin:3px 0 0;}
+.total-badge{background:#0d2647;color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;}
+.empty-state{background:#fff;border:1px solid #dde3eb;border-radius:12px;padding:48px 24px;text-align:center;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-family:'DM Serif Display',serif;font-size:17px;color:#0d2647;margin-bottom:6px;}
+.empty-sub{font-size:13px;color:#6b7280;}
+.client-group{margin-bottom:24px;}
+.client-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #e8e5df;}
+.client-name{font-family:'DM Serif Display',serif;font-size:16px;color:#0d2647;}
+.client-count{background:#f0f4f8;color:#5a6a80;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:10px;}
+.draft-card{background:#fff;border:1px solid #dde3eb;border-radius:10px;padding:16px 18px;margin-bottom:8px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(13,38,71,0.05);transition:box-shadow 0.15s,border-color 0.15s;cursor:pointer;text-decoration:none;color:inherit;}
+.draft-card:hover{box-shadow:0 4px 14px rgba(13,38,71,0.1);border-color:#c8d2de;}
+.draft-card-icon{width:40px;height:40px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.draft-card-body{flex:1;min-width:0;}
+.draft-card-title{font-size:14px;font-weight:600;color:#0d2647;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.draft-card-meta{font-size:12px;color:#6b7280;display:flex;flex-wrap:wrap;gap:10px;}
+.meta-pill{display:flex;align-items:center;gap:4px;}
+.draft-card-actions{display:flex;gap:8px;flex-shrink:0;}
+.btn-open{padding:7px 16px;border-radius:7px;background:#0d2647;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:background 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.btn-open:hover{background:#162d52;}
+.btn-del{padding:7px 10px;border-radius:7px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:background 0.15s;}
+.btn-del:hover{background:#fecaca;}
+#del-toast{position:fixed;bottom:22px;right:22px;background:#0d2647;color:#fff;padding:9px 17px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity 0.3s,transform 0.3s;pointer-events:none;}
+@media(max-width:600px){
+  .drafts-wrap{padding:16px 12px 48px;}
+  .draft-card{flex-wrap:wrap;}
+  .draft-card-actions{width:100%;}
+  .btn-open{flex:1;justify-content:center;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="del-toast"></div>
+<div class="drafts-wrap">
+
+  <div class="page-header">
+    <div>
+      <h2>💼 Billing Drafts</h2>
+      <p>All submitted billing advice forms from interns, grouped by client.</p>
+    </div>
+    <span class="total-badge">{{ grouped.values() | map('length') | sum }} draft{{ 's' if grouped.values() | map('length') | sum != 1 }}</span>
+  </div>
+
+  {% if not grouped %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <div class="empty-title">No billing drafts yet</div>
+    <div class="empty-sub">When interns submit billing advice forms, they will appear here grouped by client.</div>
+  </div>
+  {% else %}
+    {% for client, drafts in grouped.items() %}
+    <div class="client-group">
+      <div class="client-header">
+        <span class="client-name">{{ client }}</span>
+        <span class="client-count">{{ drafts | length }} draft{{ 's' if drafts | length != 1 }}</span>
+      </div>
+      {% for d in drafts %}
+      <div class="draft-card" onclick="window.location='/billing/drafts/{{ d.id }}'">
+        <div class="draft-card-icon">📄</div>
+        <div class="draft-card-body">
+          <div class="draft-card-title">{{ d.client_name }} {% if d.fy %}· {{ d.fy }}{% endif %} {% if d.firm %}· {{ d.firm }}{% endif %}</div>
+          <div class="draft-card-meta">
+            <span class="meta-pill">👤 {{ d.emp_name }}</span>
+            <span class="meta-pill">🕐 {{ d.created_at }}</span>
+          </div>
+        </div>
+        <div class="draft-card-actions" onclick="event.stopPropagation()">
+          <a href="/billing/drafts/{{ d.id }}" class="btn-open">✏️ Open &amp; Generate Invoice</a>
+          <button class="btn-del" onclick="deleteDraft({{ d.id }}, this)">🗑</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+</div>
+<script>
+async function deleteDraft(id, btn){
+  if(!confirm('Delete this billing draft? This cannot be undone.')) return;
+  btn.disabled = true;
+  try{
+    const r = await fetch(`/api/billing/delete/${id}`, {method:'POST'});
+    const j = await r.json();
+    if(j.ok){
+      const card = btn.closest('.draft-card');
+      const group = card.closest('.client-group');
+      card.style.opacity='0';card.style.transform='translateX(20px)';card.style.transition='all 0.25s';
+      setTimeout(()=>{
+        card.remove();
+        if(!group.querySelector('.draft-card')) group.remove();
+        if(!document.querySelector('.draft-card')){
+          document.querySelector('.drafts-wrap').innerHTML += '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No billing drafts yet</div><div class="empty-sub">When interns submit billing advice forms, they will appear here.</div></div>';
+        }
+      }, 250);
+      showToast('✓ Draft deleted');
+    }
+  }catch{ btn.disabled=false; }
+}
+function showToast(msg){const t=document.getElementById('del-toast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2000);}
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Partner Settings — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.settings-wrap { max-width:560px;margin:0 auto;padding:28px 20px 60px }
+.settings-title {
+  font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy);margin:0 0 4px;
+}
+.settings-sub { font-size:13px;color:var(--text-light);margin-bottom:28px }
+
+.settings-card {
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+  padding:24px 24px 20px;margin-bottom:18px;
+}
+.settings-card-title {
+  font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;
+  display:flex;align-items:center;gap:8px;
+}
+.settings-card-desc {
+  font-size:12.5px;color:var(--text-light);margin-bottom:18px;
+}
+.form-label { font-size:12.5px;font-weight:600;color:var(--text-mid);display:block;margin-bottom:5px }
+.form-control {
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r-sm);font-size:13.5px;font-family:'DM Sans',sans-serif;
+  color:var(--navy);outline:none;box-sizing:border-box;transition:border-color .15s;
+}
+.form-control:focus { border-color:var(--teal) }
+.form-group { margin-bottom:14px }
+.btn-save {
+  padding:10px 22px;background:var(--navy);color:#fff;border:none;
+  border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:13px;
+  font-weight:700;cursor:pointer;transition:opacity .15s;
+}
+.btn-save:hover { opacity:.85 }
+.alert {
+  padding:10px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:600;
+  margin-bottom:14px;display:none;
+}
+.alert-ok  { background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7 }
+.alert-err { background:#FEE2E2;color:#991B1B;border:1px solid #FECACA }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Partner Settings</span>
+  <span class="topbar-sub">Ashish Thatte</span>
+</div>
+
+<div class="settings-wrap">
+  <div class="settings-title">⚙️ Settings</div>
+  <div class="settings-sub">Manage your Billing Advice access password and other preferences.</div>
+
+  <!-- Change Billing Advice Password -->
+  <div class="settings-card">
+    <div class="settings-card-title">🔐 Billing Advice Password</div>
+    <div class="settings-card-desc">
+      This password protects the Billing Advice section from other partners.
+      Only you know this password.
+    </div>
+
+    <div id="pin-alert-ok"  class="alert alert-ok">✓ Password changed successfully!</div>
+    <div id="pin-alert-err" class="alert alert-err" id="pin-err-msg"></div>
+
+    <div class="form-group">
+      <label class="form-label">Current Password</label>
+      <input type="password" id="old-pin" class="form-control" placeholder="Enter current password" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input type="password" id="new-pin" class="form-control" placeholder="Enter new password (min 4 chars)" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm New Password</label>
+      <input type="password" id="confirm-pin" class="form-control" placeholder="Re-enter new password" autocomplete="off">
+    </div>
+
+    <button class="btn-save" onclick="changePin()">Save Password →</button>
+  </div>
+</div>
+
+<script>
+function changePin() {
+  const old     = document.getElementById('old-pin').value.trim();
+  const nw      = document.getElementById('new-pin').value.trim();
+  const confirm = document.getElementById('confirm-pin').value.trim();
+  const okEl    = document.getElementById('pin-alert-ok');
+  const errEl   = document.getElementById('pin-alert-err');
+
+  okEl.style.display = 'none';
+  errEl.style.display = 'none';
+
+  if (!old || !nw || !confirm) {
+    errEl.textContent = '⚠ All three fields are required.';
+    errEl.style.display = 'block'; return;
+  }
+  if (nw !== confirm) {
+    errEl.textContent = '⚠ New passwords do not match.';
+    errEl.style.display = 'block'; return;
+  }
+  if (nw.length < 4) {
+    errEl.textContent = '⚠ New password must be at least 4 characters.';
+    errEl.style.display = 'block'; return;
+  }
+
+  fetch('/api/partner/change-billing-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ old_pin: old, new_pin: nw })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      okEl.style.display = 'block';
+      document.getElementById('old-pin').value = '';
+      document.getElementById('new-pin').value = '';
+      document.getElementById('confirm-pin').value = '';
+    } else {
+      errEl.textContent = '⚠ ' + (d.error || 'Failed to change password.');
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(() => {
+    errEl.textContent = '⚠ Network error. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Admin Dashboard</span>
+  <span class="topbar-sub">{{ ds }}</span>
+  <div class="flex gap-3" style="margin-left:auto">
+    <input type="date" id="ds-picker" class="form-control" style="width:160px;padding:7px 12px"
+           value="{{ ds }}" onchange="loadDashboard(this.value)">
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard('{{ ds }}')">↺ Refresh</button>
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard(new Date().toISOString().slice(0,10))">Today</button>
+  </div>
+</div>
+<div class="page-content">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpi-row">
+    {% set cards = [
+      ('👥', 'Active Staff',    sm.total_active, '#0B1F3A'),
+      ('✅', 'On Time',         sm.on_time,      '#10B981'),
+      ('⚠️', 'Late',            sm.late,         '#F59E0B'),
+      ('❌', 'Not Submitted',   sm.not_submitted,'#EF4444'),
+      ('📝', 'Partial',         sm.partial,      '#0EA5C2'),
+      ('🏖', 'Pending Leaves',  pending,         '#8B5CF6'),
+    ] %}
+    {% for icon, label, val, color in cards %}
+    <div class="kpi-card" style="--kpi-color:{{ color }}">
+      <div class="kpi-icon">{{ icon }}</div>
+      <div class="kpi-value">{{ val }}</div>
+      <div class="kpi-label">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2 mb-6">
+    <!-- Breakdown bar -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📊 Submission Breakdown</span>
+        <div class="flex gap-2" style="font-size:12px;color:var(--text-light)">
+          <span style="color:#10B981">■ On Time</span>
+          <span style="color:#F59E0B">■ Late</span>
+          <span style="color:#0EA5C2">■ Partial</span>
+          <span style="color:#EF4444">■ Not Submitted</span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% set total = sm.total_active if sm.total_active > 0 else 1 %}
+        {% set segs = [
+          (sm.on_time,       '#10B981', 'On Time'),
+          (sm.late,          '#F59E0B', 'Late'),
+          (sm.partial,       '#0EA5C2', 'Partial'),
+          (sm.not_submitted, '#EF4444', 'Not Submitted'),
+        ] %}
+        <div style="height:32px;border-radius:8px;overflow:hidden;display:flex;background:#F1F5F9">
+          {% for cnt, col, lbl in segs %}
+          {% if cnt > 0 %}
+          <div style="width:{{ (cnt/total*100)|round(1) }}%;background:{{ col }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;transition:width .4s"
+               title="{{ lbl }}: {{ cnt }}">
+            {% if (cnt/total*100) > 8 %}{{ (cnt/total*100)|round(0)|int }}%{% endif %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="flex gap-4 mt-4">
+          {% for cnt, col, lbl in segs %}
+          <div class="flex-center gap-2" style="font-size:13px">
+            <div style="width:10px;height:10px;border-radius:50%;background:{{ col }}"></div>
+            <span style="color:var(--text-mid)">{{ lbl }}:</span>
+            <strong>{{ cnt }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming birthdays -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🎂 Upcoming Birthdays</span>
+        <a href="/birthdays" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:0">
+        {% if upcoming_bdays %}
+        <table>
+          <tbody>
+            {% for emp in upcoming_bdays %}
+            <tr>
+              <td>
+                <div style="font-weight:600;font-size:13.5px">{{ emp.full_name }}</div>
+                <div style="font-size:12px;color:var(--text-light)">{{ emp.get('role','') }}</div>
+              </td>
+              <td>
+                {% set mm, dd = emp.date_of_birth.split('-') %}
+                <span style="font-size:13px;color:var(--text-mid)">{{ dd }} {{ ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mm|int] }}</span>
+              </td>
+              <td>
+                {% if emp.days_away == 0 %}
+                <span class="badge badge-gold">🎂 Today!</span>
+                {% elif emp.days_away == 1 %}
+                <span class="badge badge-success">Tomorrow</span>
+                {% else %}
+                <span class="badge badge-gray">in {{ emp.days_away }} days</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:20px;color:var(--text-light);font-size:13.5px;text-align:center">
+          No birthdays in the next 7 days 🎉
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Submission Status + Missing -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📋 Submission Status</span>
+        <span style="font-size:12px;color:var(--text-light)">{{ ds }}</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Employee</th><th>Role</th><th>Submitted</th><th>Hrs</th><th>8h Status</th>
+          </tr></thead>
+          <tbody>
+            {% if sm.records %}
+            {% for r in sm.records %}
+            {% set hrs = r.total_hrs|float %}
+            {% set done = hrs >= daily_target %}
+            <tr>
+              <td><strong>{{ r.full_name }}</strong></td>
+              <td><span class="badge badge-navy">{{ r.role }}</span></td>
+              <td>
+                {% set s = r.submission_status %}
+                {% if s == 'On Time' %}<span class="badge badge-success">✓ On Time</span>
+                {% elif s == 'Late' %}<span class="badge badge-warning">⚠ Late</span>
+                {% elif s == 'Partially Filled' %}<span class="badge badge-info">~ Partial</span>
+                {% else %}<span class="badge badge-danger">✕ Missed</span>{% endif %}
+              </td>
+              <td style="font-weight:600;color:{{ '#10B981' if done else '#EF4444' }}">{{ '%.1f'|format(hrs) }}</td>
+              <td>
+                {% if done %}<span style="color:#10B981;font-weight:600">🟢 Complete</span>
+                {% else %}<span style="color:#EF4444;font-weight:600">🔴 {{ '%.1f'|format(hrs) }}/{{ daily_target }}h</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:24px">No submissions for this date.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">❌ Not Submitted</span>
+        <span class="badge badge-danger">{{ ms|length }} staff</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee</th><th>Role</th><th>Reports To</th></tr></thead>
+          <tbody>
+            {% if ms %}
+            {% for m in ms %}
+            <tr>
+              <td><strong>{{ m.full_name }}</strong></td>
+              <td><span class="badge badge-navy">{{ m.role }}</span></td>
+              <td style="color:var(--text-mid)">{{ m.get('reporting_to','—') or '—' }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr><td colspan="3" style="text-align:center;color:var(--success);padding:24px;font-weight:600">✅ All staff submitted!</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function loadDashboard(ds) {
+  window.location.href = '/admin?date=' + ds;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Change PIN — JAA{% endblock %}
+{% block content %}
+<div class="topbar"><span class="topbar-title">Change PIN</span></div>
+<div class="page-content">
+  <div class="card" style="max-width:460px;margin:0 auto">
+    <div class="card-header"><span class="card-title">🔑 Change Your PIN</span></div>
+    <div class="card-body">
+      {% if success %}<div class="alert alert-success">✓ {{ success }}</div>{% endif %}
+      {% if error %}<div class="alert alert-danger">⚠ {{ error }}</div>{% endif %}
+      <form method="POST">
+        <div class="form-group"><label class="form-label">Current PIN</label><input type="password" name="old_pin" class="form-control" maxlength="6" required></div>
+        <div class="form-group"><label class="form-label">New PIN (min 4 digits)</label><input type="password" name="new_pin" class="form-control" maxlength="6" required></div>
+        <div class="form-group"><label class="form-label">Confirm New PIN</label><input type="password" name="confirm_pin" class="form-control" maxlength="6" required></div>
+        <button type="submit" class="btn btn-primary w-full mt-4">🔑 Change PIN</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

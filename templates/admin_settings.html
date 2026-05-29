@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Settings — JAA{% endblock %}
+{% block content %}
+<div class="topbar"><span class="topbar-title">Settings</span></div>
+<div class="page-content" style="max-width:720px">
+  {% if msg %}
+  <div class="alert {{ 'alert-success' if msg[0]=='success' else 'alert-danger' }}">{{ msg[1] }}</div>
+  {% endif %}
+
+  <!-- Timesheet Rules -->
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">⏰ Timesheet Rules</span></div>
+    <form method="POST" action="/admin/settings">
+      <input type="hidden" name="action" value="save">
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Submission Cutoff Time</label><input type="time" name="cutoff_time" class="form-control" value="{{ cfg.get('cutoff_time','20:30') }}"></div>
+          <div class="form-group"><label class="form-label">Late Cutoff Time</label><input type="time" name="late_cutoff" class="form-control" value="{{ cfg.get('late_cutoff','20:00') }}"></div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" name="email_enabled" id="email-cb" {{ 'checked' if cfg.get('email_enabled') }}>
+          <label for="email-cb" style="font-weight:600;color:var(--text-mid)">Enable Email Notifications</label>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Manager Email</label><input type="email" name="manager_email" class="form-control" value="{{ cfg.get('manager_email','') }}"></div>
+          <div class="form-group"><label class="form-label">SMTP Host</label><input type="text" name="smtp_host" class="form-control" value="{{ cfg.get('smtp_host','') }}"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">SMTP Port</label><input type="number" name="smtp_port" class="form-control" value="{{ cfg.get('smtp_port',587) }}"></div>
+          <div class="form-group"><label class="form-label">SMTP User</label><input type="text" name="smtp_user" class="form-control" value="{{ cfg.get('smtp_user','') }}"></div>
+        </div>
+        <div class="form-group"><label class="form-label">SMTP Password</label><input type="password" name="smtp_pass" class="form-control" placeholder="Leave blank to keep current"></div>
+      </div>
+      <div style="padding:0 20px 20px;display:flex;gap:10px">
+        <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+        <button type="button" class="btn btn-ghost" onclick="testEmail()">📧 Send Test Email</button>
+      </div>
+    </form>
+  </div>
+
+
+  <!-- Send Email Summary -->
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">📧 Email Notifications</span></div>
+    <div class="card-body">
+      <p style="font-size:13.5px;color:var(--text-mid);margin-bottom:16px">
+        Send the daily timesheet summary email to the manager email address configured above.
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <input type="date" id="summary-date" class="form-control" style="width:180px;padding:7px 12px"
+               value="{{ today_date }}">
+        <button class="btn btn-primary" onclick="sendSummary()">📧 Send Daily Summary</button>
+        <span id="email-status" style="font-size:13px;color:var(--text-light)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Admin PIN -->
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">🔑 Change Admin PIN</span></div>
+    <form method="POST" action="/admin/settings">
+      <input type="hidden" name="action" value="change_admin_pin">
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Current PIN</label><input type="password" name="old_pin" class="form-control" maxlength="6"></div>
+          <div class="form-group"><label class="form-label">New PIN</label><input type="password" name="new_pin" class="form-control" maxlength="6"></div>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px"><button type="submit" class="btn btn-navy">🔑 Change PIN</button></div>
+    </form>
+  </div>
+
+  <!-- Partner PIN -->
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">🔐 Partner Login PIN</span></div>
+    <div class="card-body">
+      <p style="font-size:13.5px;color:var(--text-mid);margin-bottom:16px">
+        The <strong>Partner PIN</strong> gives access to the full Partner panel including Billing Advice.<br>
+        Partners log in from the main login page using this PIN.
+        To set it for the first time, enter any value — it will be created automatically.
+      </p>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:1;min-width:140px">
+          <label class="form-label">Admin PIN (to authorise)</label>
+          <input type="password" id="pp_admin" class="form-control" maxlength="6" placeholder="Your admin PIN">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:140px">
+          <label class="form-label">New Partner PIN</label>
+          <input type="password" id="pp_new" class="form-control" maxlength="6" placeholder="Min 4 digits">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:140px">
+          <label class="form-label">Confirm Partner PIN</label>
+          <input type="password" id="pp_conf" class="form-control" maxlength="6" placeholder="Repeat PIN">
+        </div>
+        <button type="button" class="btn btn-navy" onclick="changePartnerPin()">🔐 Set Partner PIN</button>
+      </div>
+      <div id="pp_msg" style="margin-top:10px;font-size:13px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Data Management -->
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">🗄️ Data Management</span></div>
+    <div class="card-body">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        💡 Monthly auto-backup runs on first startup of each month.<br>
+        Backups saved to: <code>{{ backup_dir }}</code><br>
+        Database size: <strong>{{ db_size }}</strong> · {{ backups }} backup(s) saved
+      </div>
+      <form method="POST" action="/admin/settings" style="display:inline">
+        <input type="hidden" name="action" value="backup">
+        <button type="submit" class="btn btn-primary">💾 Backup Now</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Clear Trial Data -->
+  <div class="card">
+    <div class="card-header"><span class="card-title" style="color:var(--danger)">⚠️ Clear Trial Data</span></div>
+    <div class="card-body">
+      <p style="font-size:13.5px;color:var(--text-mid);margin-bottom:16px">Permanently deletes timesheet entries, submissions, attendance and email logs. A backup is created first automatically.</p>
+      <form method="POST" action="/admin/settings" onsubmit="return confirm('This will permanently delete trial data. A backup will be created first. Continue?')">
+        <input type="hidden" name="action" value="clear_trial">
+        <div style="display:flex;gap:16px;margin-bottom:16px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" name="keep_emp" checked> Keep employees & PINs</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" name="keep_co" checked> Keep companies</label>
+        </div>
+        <button type="submit" class="btn btn-danger">🗑️ Clear Trial Data</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function sendSummary() {
+  const d = document.getElementById('summary-date').value || new Date().toISOString().slice(0,10);
+  const s = document.getElementById('email-status');
+  s.textContent = '⏳ Sending...';
+  const r = await api('/api/email/send-summary', {date: d});
+  s.textContent = r.ok ? '✅ Sent!' : ('❌ ' + (r.msg||r.error||'Failed'));
+  s.style.color = r.ok ? 'var(--success)' : 'var(--danger)';
+}
+async function testEmail() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Sending...';
+  const form = btn.closest('div').closest('div').closest('form');
+  const r = await fetch('/admin/settings', {
+    method:'POST',
+    body: new URLSearchParams({
+      action:'test_email',
+    })
+  });
+  btn.disabled = false; btn.textContent = '📧 Send Test Email';
+  const data = await r.text();
+  toast('Test email request sent!', 'info');
+}
+
+async function changePartnerPin() {
+  const admin = document.getElementById('pp_admin').value.trim();
+  const np    = document.getElementById('pp_new').value.trim();
+  const conf  = document.getElementById('pp_conf').value.trim();
+  const msg   = document.getElementById('pp_msg');
+  msg.style.display = 'none';
+  if (!admin || !np || !conf) { showPPMsg('All fields are required.', false); return; }
+  if (np !== conf)            { showPPMsg('New PINs do not match.', false); return; }
+  if (np.length < 4)          { showPPMsg('PIN must be at least 4 digits.', false); return; }
+  const r = await api('/api/billing/change-partner-pin', { old_pin: admin, new_pin: np });
+  if (r.ok) {
+    showPPMsg('✅ Partner Billing PIN updated successfully!', true);
+    document.getElementById('pp_admin').value = '';
+    document.getElementById('pp_new').value = '';
+    document.getElementById('pp_conf').value = '';
+  } else {
+    showPPMsg('❌ ' + (r.error || 'Failed. Check your Admin PIN.'), false);
+  }
+}
+function showPPMsg(text, ok) {
+  const el = document.getElementById('pp_msg');
+  el.textContent = text;
+  el.style.color = ok ? 'var(--success)' : 'var(--danger)';
+  el.style.display = 'block';
+}
+</script>
+{% endblock %}

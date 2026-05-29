@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% block title %}My Tasks — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.tasks-topbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px }
+.tasks-topbar h2 { font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin:0 }
+
+/* ── Task card ───────────────────────────────────────────────────────────── */
+.task-card {
+  background:#fff; border:1.5px solid var(--border);
+  border-radius:var(--r); padding:16px 18px; margin-bottom:10px;
+  transition:box-shadow .15s;
+}
+.task-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
+.task-card.is-overdue { border-left:4px solid #DC2626; }
+.task-card.is-done    { opacity:.65; }
+
+.task-header { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px }
+.task-title  { font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.3 }
+.task-desc   { font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.5 }
+
+.task-meta {
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  font-size:12px; color:var(--text-light);
+}
+.task-meta .meta-item { display:flex;align-items:center;gap:4px }
+
+.status-select {
+  padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700;
+  border:1.5px solid var(--border); background:#fff; cursor:pointer;
+  font-family:'DM Sans',sans-serif; outline:none; transition:all .15s;
+}
+.status-select.s-pending    { color:#78350F;background:#FEF3C7;border-color:#FCD34D }
+.status-select.s-inprogress { color:#1D4ED8;background:#EFF6FF;border-color:#BFDBFE }
+.status-select.s-done       { color:#065F46;background:#D1FAE5;border-color:#6EE7B7 }
+
+/* ── Task type badges ────────────────────────────────────────────────────── */
+.type-badge {
+  display:inline-flex;align-items:center;
+  border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;
+  letter-spacing:.3px;flex-shrink:0;
+}
+.type-regular   { background:#F3F4F6;color:#6B7280 }
+.type-emergency { background:#FEE2E2;color:#991B1B }
+.type-specific  { background:#FEF3C7;color:#92400E }
+
+.overdue-badge {
+  display:inline-flex;align-items:center;gap:4px;
+  background:#FEE2E2;color:#991B1B;border-radius:20px;
+  padding:2px 9px;font-size:11px;font-weight:700;
+}
+
+/* ── Section headers ─────────────────────────────────────────────────────── */
+.sec-hdr {
+  display:flex;align-items:center;gap:10px;
+  margin:24px 0 14px; padding-bottom:10px;
+  border-bottom:2px solid var(--border);
+}
+.sec-hdr h3 { font-size:15px;font-weight:700;color:var(--navy);margin:0 }
+.sec-count {
+  background:var(--surface);border-radius:20px;
+  padding:2px 10px;font-size:12px;font-weight:700;color:var(--text-mid);
+}
+
+/* ── Company group ───────────────────────────────────────────────────────── */
+.co-group { margin-bottom:20px }
+.co-group-hdr {
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+.co-group-hdr .co-label {
+  font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--text-light);
+}
+.co-group-hdr::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+
+/* ── Created tasks table ─────────────────────────────────────────────────── */
+.created-table { width:100%;border-collapse:collapse;font-size:13px }
+.created-table th {
+  text-align:left;padding:8px 12px;font-size:11px;font-weight:700;
+  color:var(--text-light);letter-spacing:.6px;text-transform:uppercase;
+  background:var(--surface);border-bottom:2px solid var(--border);
+}
+.created-table td {
+  padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);
+  vertical-align:middle;
+}
+.created-table tr:last-child td { border-bottom:none }
+.created-table tr.is-overdue td:first-child { border-left:3px solid #DC2626 }
+
+/* ── Status badge (read-only) ────────────────────────────────────────────── */
+.sbadge {
+  display:inline-flex;align-items:center;
+  border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700;
+}
+.sbadge.s-pending    { color:#78350F;background:#FEF3C7 }
+.sbadge.s-inprogress { color:#1D4ED8;background:#EFF6FF }
+.sbadge.s-done       { color:#065F46;background:#D1FAE5 }
+
+/* ── Empty ───────────────────────────────────────────────────────────────── */
+.empty-tasks {
+  text-align:center;padding:40px 20px;color:var(--text-light);
+  background:#fff;border:1px solid var(--border);border-radius:var(--r);
+}
+.empty-tasks .ei { font-size:36px;margin-bottom:10px }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#t-toast {
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:11px 18px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;
+  background:var(--navy);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+#t-toast.show { opacity:1 }
+#t-toast.ok  { background:#065F46 }
+#t-toast.err { background:#991B1B }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Tasks</span>
+  <div style="display:flex;align-items:center;gap:12px">
+    {% set emp_role = emp.get('role','') %}
+    {% if emp_role in ('Partner','Associate','Employee') %}
+    <button class="btn btn-gold" onclick="openAssignTask()">➕ Assign Task</button>
+    {% endif %}
+    <a href="/timesheet" style="font-size:13px;color:var(--text-mid);text-decoration:none;font-weight:600">← Back to Timesheet</a>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <!-- ── SECTION 1: Tasks assigned to me ──────────────────────────────────── -->
+  <div class="sec-hdr">
+    <h3>📋 My Pending Tasks</h3>
+    {% set total_mine = namespace(n=0) %}
+  {% for tasks in mine_by_company.values() %}{% set total_mine.n = total_mine.n + tasks|length %}{% endfor %}
+    <span class="sec-count">{{ total_mine.n }}</span>
+  </div>
+
+  {% if mine_by_company %}
+    {% for company_name, tasks in mine_by_company.items() %}
+    <div class="co-group">
+      <div class="co-group-hdr">
+        <span class="co-label">{{ company_name }}</span>
+      </div>
+      {% for t in tasks %}
+      {% set is_over = t.due_date < today and t.status != 'Done' %}
+      {% set status_cls = 's-done' if t.status == 'Done' else ('s-inprogress' if t.status == 'In Progress' else 's-pending') %}
+      <div class="task-card {% if is_over %}is-overdue{% endif %} {% if t.status=='Done' %}is-done{% endif %}"
+           id="tcard-{{ t.id }}">
+        <div class="task-header">
+          <div>
+            <div class="task-title">{{ t.title }}</div>
+            {% if t.description %}
+            <div class="task-desc">{{ t.description }}</div>
+            {% endif %}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+            {% set tt = t.get('task_type','Regular') %}
+            {% set tc = 'type-emergency' if tt=='Emergency' else ('type-specific' if tt=='Specific' else 'type-regular') %}
+            <span class="type-badge {{ tc }}">{{ tt }}</span>
+            {% if is_over %}
+            <span class="overdue-badge">⚠ Overdue</span>
+            {% endif %}
+            <select class="status-select {{ status_cls }}"
+                    onchange="updateStatus({{ t.id }}, this)"
+                    id="sel-{{ t.id }}">
+              <option value="Pending"     {% if t.status=='Pending' %}selected{% endif %}>Pending</option>
+              <option value="In Progress" {% if t.status=='In Progress' %}selected{% endif %}>In Progress</option>
+              <option value="Done"        {% if t.status=='Done' %}selected{% endif %}>Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="task-meta">
+          <span class="meta-item">📅 Due {{ t.due_date }}</span>
+          <span class="meta-item">👤 Assigned by {{ t.assigned_by_name }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-tasks">
+    <div class="ei">✅</div>
+    <div>No tasks assigned to you right now.</div>
+  </div>
+  {% endif %}
+
+  <!-- ── SECTION 2: Tasks I assigned ──────────────────────────────────────── -->
+  <div class="sec-hdr" style="margin-top:32px">
+    <h3>📤 Tasks I Assigned</h3>
+    <span class="sec-count">{{ created | length }}</span>
+  </div>
+
+  {% if created %}
+  <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+    <table class="created-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Company</th>
+          <th>Assigned To</th>
+          <th>Due Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in created %}
+        {% set is_over = t.due_date < today and t.status != 'Done' %}
+        {% set sc = 's-done' if t.status=='Done' else ('s-inprogress' if t.status=='In Progress' else 's-pending') %}
+        {% set tt = t.get('task_type','Regular') %}
+        {% set tc = 'type-emergency' if tt=='Emergency' else ('type-specific' if tt=='Specific' else 'type-regular') %}
+        <tr class="{% if is_over %}is-overdue{% endif %}">
+          <td style="font-weight:600">
+            {{ t.title }}
+            {% if is_over %}<span class="overdue-badge" style="margin-left:6px">⚠ Overdue</span>{% endif %}
+          </td>
+          <td><span class="type-badge {{ tc }}">{{ tt }}</span></td>
+          <td style="color:var(--text-mid)">{{ t.company_name }}</td>
+          <td>{{ t.assigned_to_name }}</td>
+          <td style="color:{% if is_over %}#DC2626{% else %}var(--text-mid){% endif %};font-weight:{% if is_over %}700{% else %}400{% endif %}">
+            {{ t.due_date }}
+          </td>
+          <td><span class="sbadge {{ sc }}">{{ t.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-tasks">
+    <div class="ei">📤</div>
+    <div>You haven't assigned any tasks yet.</div>
+  </div>
+  {% endif %}
+
+</div><!-- /page-content -->
+
+<!-- ── Assign Task Modal ───────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="assign-task-overlay" onclick="atOverlayClick(event)">
+  <div class="modal" style="width:560px;max-width:96vw">
+    <div class="modal-header" style="background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:16px 16px 0 0;border-bottom:none">
+      <div class="modal-title" style="color:#fff">➕ Assign Task</div>
+      <button class="modal-close" onclick="closeAssignTask()" style="background:rgba(255,255,255,.12);color:#fff">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Company *</label>
+        <select id="at-company" class="form-control" onchange="atLoadAssignees()">
+          <option value="">— Select company —</option>
+          {% for co in emp_companies %}
+          <option value="{{ co.unique_code }}">{{ co.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Task Title *</label>
+        <input type="text" id="at-title" class="form-control" placeholder="e.g. Prepare trial balance">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="at-desc" class="form-control" rows="2"
+                  style="resize:vertical;height:auto"
+                  placeholder="Optional details…"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group">
+          <label class="form-label">Assign To *</label>
+          <select id="at-assignee" class="form-control">
+            <option value="">— Select company first —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Task Type *</label>
+          <select id="at-type" class="form-control">
+            <option value="Regular">Regular</option>
+            <option value="Emergency">🔴 Emergency</option>
+            <option value="Specific">🟡 Specific</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Due Date *</label>
+        <input type="date" id="at-due" class="form-control" min="{{ today }}">
+      </div>
+      <div id="at-error" style="color:#991B1B;font-size:13px;margin-bottom:8px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAssignTask()">Cancel</button>
+      <button class="btn btn-gold" onclick="submitAssignTask()">Assign Task →</button>
+    </div>
+  </div>
+</div>
+
+<div id="t-toast"></div>
+
+<script>
+const STATUS_CLASSES = {
+  'Pending':     's-pending',
+  'In Progress': 's-inprogress',
+  'Done':        's-done'
+};
+
+function updateStatus(taskId, sel) {
+  const newStatus = sel.value;
+  sel.className = 'status-select ' + (STATUS_CLASSES[newStatus] || '');
+  fetch('/api/tasks/update-status', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({task_id: taskId, new_status: newStatus})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      showToast('✓ Status updated');
+      const card = document.getElementById('tcard-' + taskId);
+      if (card) card.classList.toggle('is-done', newStatus === 'Done');
+    } else {
+      showToast('✗ ' + (d.error || 'Update failed'), 'err');
+    }
+  })
+  .catch(() => showToast('✗ Network error', 'err'));
+}
+
+/* ── Assign Task Modal ─────────────────────────────────────────────────────── */
+function openAssignTask() {
+  document.getElementById('at-company').value  = '';
+  document.getElementById('at-title').value    = '';
+  document.getElementById('at-desc').value     = '';
+  document.getElementById('at-type').value     = 'Regular';
+  document.getElementById('at-due').value      = '';
+  document.getElementById('at-error').style.display = 'none';
+  document.getElementById('at-assignee').innerHTML = '<option value="">— Select company first —</option>';
+  document.getElementById('assign-task-overlay').classList.add('open');
+}
+
+function closeAssignTask() {
+  document.getElementById('assign-task-overlay').classList.remove('open');
+}
+
+function atOverlayClick(e) {
+  if (e.target === document.getElementById('assign-task-overlay')) closeAssignTask();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAssignTask(); });
+
+function atLoadAssignees() {
+  const code = document.getElementById('at-company').value;
+  const sel  = document.getElementById('at-assignee');
+  if (!code) {
+    sel.innerHTML = '<option value="">— Select company first —</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Loading…</option>';
+  fetch('/api/tasks/my-team?company=' + encodeURIComponent(code))
+    .then(r => r.json())
+    .then(d => {
+      const team = d.team || [];
+      if (team.length === 0) {
+        sel.innerHTML = '<option value="">No direct reports in this company</option>';
+        return;
+      }
+      sel.innerHTML = '<option value="">— Select assignee —</option>';
+      team.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.member_emp_id;
+        o.textContent = m.member_name + ' (' + m.member_role + ')';
+        sel.appendChild(o);
+      });
+    })
+    .catch(() => { sel.innerHTML = '<option value="">Error loading team</option>'; });
+}
+
+function submitAssignTask() {
+  const errEl    = document.getElementById('at-error');
+  const code     = document.getElementById('at-company').value;
+  const title    = document.getElementById('at-title').value.trim();
+  const desc     = document.getElementById('at-desc').value.trim();
+  const assignee = document.getElementById('at-assignee').value;
+  const taskType = document.getElementById('at-type').value;
+  const due      = document.getElementById('at-due').value;
+
+  if (!code || !title || !assignee || !due) {
+    errEl.textContent = 'Please fill in all required fields.';
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+
+  fetch('/api/tasks/create', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({company_code: code, title, description: desc,
+                          assigned_to_emp_id: assignee, due_date: due,
+                          task_type: taskType})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      showToast('✓ Task assigned!');
+      closeAssignTask();
+      setTimeout(() => location.reload(), 800);
+    } else {
+      errEl.textContent = d.error || 'Error creating task.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(() => { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; });
+}
+
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('t-toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3000);
+}
+</script>
+{% endblock %}

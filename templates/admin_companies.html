@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Companies — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Companies</span>
+  <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('add-co-modal')">➕ Add Company</button>
+</div>
+<div class="page-content">
+  <div class="card">
+    <div class="card-header"><span class="card-title">🏢 Company Master List</span><span class="badge badge-navy">{{ companies|length }}</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Code</th><th>Short Code</th><th>Full Name</th><th></th></tr></thead>
+      <tbody>
+        {% for co in companies %}
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--teal)">{{ co.unique_code }}</td>
+          <td><span class="badge badge-navy">{{ co.short_code }}</span></td>
+          <td style="font-weight:600">{{ co.full_name }}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="editCo('{{ co.unique_code }}','{{ co.short_code }}','{{ co.full_name }}')">✏ Edit</button>
+            <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none" onclick="deleteCo('{{ co.unique_code }}','{{ co.full_name }}')">🗑 Delete</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+<div class="modal-overlay" id="add-co-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">➕ Add Company</span><button class="modal-close" onclick="closeModal('add-co-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Unique Code *</label><input class="form-control" id="new-code" placeholder="JAA001"></div>
+      <div class="form-group"><label class="form-label">Short Code *</label><input class="form-control" id="new-short" placeholder="ABC"></div>
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-control" id="new-fname" placeholder="ABC Company Pvt. Ltd."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-co-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCo()">Add</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="edit-co-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">✏ Edit Company</span><button class="modal-close" onclick="closeModal('edit-co-modal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-co-orig-code">
+      <div class="form-group"><label class="form-label">Unique Code *</label><input class="form-control" id="edit-co-code" placeholder="JAA001"></div>
+      <div class="form-group"><label class="form-label">Short Code *</label><input class="form-control" id="edit-co-short" placeholder="ABC"></div>
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-control" id="edit-co-fname" placeholder="ABC Company Pvt. Ltd."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-co-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCo()">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function editCo(code,short,fname){document.getElementById('edit-co-orig-code').value=code;document.getElementById('edit-co-code').value=code;document.getElementById('edit-co-short').value=short;document.getElementById('edit-co-fname').value=fname;openModal('edit-co-modal')}
+async function addCo(){const r=await api('/api/company/add',{unique_code:document.getElementById('new-code').value,short_code:document.getElementById('new-short').value,full_name:document.getElementById('new-fname').value});if(r.ok){toast('Added!','success');setTimeout(()=>location.reload(),800);}else toast('Failed or duplicate code.','error');}
+async function saveCo(){const r=await api('/api/company/update',{unique_code:document.getElementById('edit-co-orig-code').value,new_unique_code:document.getElementById('edit-co-code').value,short_code:document.getElementById('edit-co-short').value,full_name:document.getElementById('edit-co-fname').value});if(r.ok){toast('Saved!','success');closeModal('edit-co-modal');setTimeout(()=>location.reload(),800);}else toast(r.error||'Failed.','error');}
+async function deleteCo(code, name){
+  if(!confirm('Delete "' + name + '" ('+code+')? This cannot be undone.\nExisting timesheet entries will keep their data but the company will be removed.')) return;
+  const r = await api('/api/company/delete', {unique_code: code});
+  if(r.ok){ toast('Company deleted.','success'); setTimeout(()=>location.reload(),800); }
+  else toast(r.error||'Delete failed.','error');
+}
+</script>
+{% endblock %}

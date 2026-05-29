@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Billing Advice Drafts — JAA Partner{% endblock %}
+
+{% block extra_head %}
+<style>
+.drafts-wrap { max-width:900px;margin:0 auto;padding:28px 20px 60px }
+.page-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px }
+.page-header h2 { font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy);margin:0 }
+.total-badge { background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px }
+
+.filter-tabs { display:flex;gap:8px;margin-bottom:20px }
+.ftab { padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);background:#fff;
+        font-size:12.5px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .15s }
+.ftab.active { background:var(--navy);border-color:var(--navy);color:#fff }
+
+.co-group    { margin-bottom:28px }
+.co-hdr      { display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border) }
+.co-name     { font-family:'DM Serif Display',serif;font-size:16px;color:var(--navy) }
+.co-count    { background:var(--surface);color:var(--text-mid);font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:10px }
+
+.draft-card  { background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:8px;
+               display:flex;align-items:center;gap:16px;transition:box-shadow .15s }
+.draft-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.08) }
+.draft-card.finalized { border-left:4px solid #10B981;opacity:.8 }
+.draft-card.draft     { border-left:4px solid var(--gold) }
+.dc-icon { width:40px;height:40px;background:var(--surface);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0 }
+.dc-body { flex:1;min-width:0 }
+.dc-title{ font-size:14px;font-weight:700;color:var(--navy);margin-bottom:3px }
+.dc-meta { font-size:12px;color:var(--text-light);display:flex;gap:12px;flex-wrap:wrap }
+.dc-actions { display:flex;gap:8px;flex-shrink:0 }
+.btn-open { padding:8px 16px;border-radius:var(--r-sm);background:var(--navy);color:#fff;border:none;
+            font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;
+            text-decoration:none;display:inline-flex;align-items:center;gap:5px }
+.btn-open:hover { opacity:.85 }
+.sbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700 }
+.s-draft     { background:#FEF3C7;color:#92400E }
+.s-finalized { background:#D1FAE5;color:#065F46 }
+
+.empty-state { text-align:center;padding:48px 20px;background:#fff;border:1px solid var(--border);border-radius:var(--r) }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Billing Advice Drafts</span>
+  <span class="topbar-sub">Partner View</span>
+</div>
+
+<div class="drafts-wrap">
+  <div class="page-header">
+    <h2>💼 Billing Advice Drafts</h2>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="total-badge">{{ all_drafts|length }} total</span>
+
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="filterBy('all', this)">All</button>
+    <button class="ftab" onclick="filterBy('draft', this)">🕐 Pending</button>
+    <button class="ftab" onclick="filterBy('finalized', this)">✅ Finalized</button>
+  </div>
+
+  {% if not grouped %}
+  <div class="empty-state">
+    <div style="font-size:40px;margin-bottom:12px">📭</div>
+    <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:6px">No billing advice drafts yet</div>
+    <div style="font-size:13px;color:var(--text-light)">When employees submit billing advice forms they will appear here.</div>
+  </div>
+  {% else %}
+    {% for company, drafts in grouped.items() %}
+    <div class="co-group" data-statuses="{{ drafts|map(attribute='status')|join(',') }}">
+      <div class="co-hdr">
+        <span class="co-name">🏢 {{ company }}</span>
+        <span class="co-count">{{ drafts|length }}</span>
+      </div>
+      {% for d in drafts %}
+      <div class="draft-card {{ d.status }}" data-status="{{ d.status }}">
+        <div class="dc-icon">{% if d.status == 'finalized' %}✅{% else %}📄{% endif %}</div>
+        <div class="dc-body">
+          <div class="dc-title">FY {{ d.fy or '—' }}{% if d.firm_name %} · {{ d.firm_name }}{% endif %}</div>
+          <div class="dc-meta">
+            <span>👤 {{ d.submitter_name }}</span>
+            <span>📅 {{ d.submitted_at[:10] }}</span>
+            {% if d.status == 'finalized' %}<span style="color:#065F46;font-weight:600">🧾 {{ d.invoice_no }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="dc-actions">
+          <span class="sbadge s-{{ d.status }}">{{ d.status.capitalize() }}</span>
+          <a href="/partner/billing-advice/{{ d.id }}" class="btn-open">
+            {% if d.status == 'draft' %}✏ Review &amp; Finalize{% else %}👁 View{% endif %}
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+function filterBy(status, btn) {
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.draft-card').forEach(card => {
+    card.style.display = (status === 'all' || card.dataset.status === status) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.co-group').forEach(group => {
+    const visible = [...group.querySelectorAll('.draft-card')].some(c => c.style.display !== 'none');
+    group.style.display = visible ? 'block' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}Generate Invoice — JAA Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+.inv-wrap{max-width:700px;margin:0 auto;padding:28px 24px 72px;}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5a6a80;text-decoration:none;margin-bottom:20px;font-weight:500;}
+.back-link:hover{color:#0d2647;}
+.page-header{margin-bottom:24px;}
+.page-header h2{font-family:'DM Serif Display',serif;font-size:22px;color:#0d2647;margin-bottom:4px;}
+.draft-meta{background:#fff;border:1px solid #dde3eb;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.dm-item{display:flex;flex-direction:column;gap:2px;}
+.dm-label{font-size:10px;font-weight:700;color:#6b7a94;text-transform:uppercase;letter-spacing:0.7px;}
+.dm-val{font-size:13px;font-weight:600;color:#0d2647;}
+.section-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px;}
+.section-head:first-of-type{margin-top:0;}
+.s-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.s-icon.navy{background:#0d2647;} .s-icon.gold{background:#c9a84c;}
+.s-title{font-family:'DM Serif Display',serif;font-size:14px;color:#0d2647;}
+.s-line{flex:1;height:1px;background:#dde3eb;}
+.s-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;background:rgba(201,168,76,0.12);color:#a8863c;border:1px solid rgba(201,168,76,0.25);}
+.fg{background:#fff;border:1px solid #dde3eb;border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.f{padding:11px 15px;border-bottom:1px solid #dde3eb;}
+.f:last-child{border-bottom:none;}
+.f label{display:block;font-size:10px;font-weight:700;color:#6b7a94;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+.f input,.f select{width:100%;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13.5px;color:#1a2744;padding:0;}
+.f input::placeholder{color:#8a99b0;}
+.f input[type="date"]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
+.r2{display:grid;grid-template-columns:1fr 1fr;}
+.r2 .f:first-child{border-right:1px solid #dde3eb;}
+.tg{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;}
+.tg label{padding:5px 13px;border:1.5px solid #c8d2de;border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:500;color:#5a6a80;transition:all 0.15s;text-transform:none;letter-spacing:0;margin-bottom:0;}
+.tg input[type="radio"]{display:none;}
+.tg label:has(input:checked){background:#0d2647;border-color:#0d2647;color:#fff;font-weight:600;}
+.gst-strip{background:#0d2647;border-radius:10px;padding:13px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px;text-align:center;}
+.gcl{font-size:9.5px;text-transform:uppercase;letter-spacing:0.8px;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.gcv{font-family:'DM Serif Display',serif;font-size:17px;color:#c9a84c;}
+.gcs{font-size:10.5px;color:rgba(255,255,255,0.45);margin-top:2px;}
+.amt-panel{background:#fff;border:1px solid #dde3eb;border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.amt-row{display:flex;justify-content:space-between;align-items:center;padding:9px 15px;border-bottom:1px solid #dde3eb;font-size:13.5px;}
+.amt-row:last-child{border-bottom:none;}
+.amt-row .al{color:#5a6a80;}
+.amt-row .av{font-weight:600;color:#1a2744;}
+.amt-row.gr .av{color:#0ea5a0;}
+.amt-row.tr{background:#0d2647;}
+.amt-row.tr .al{font-family:'DM Serif Display',serif;font-size:14px;color:rgba(255,255,255,0.75);}
+.amt-row.tr .av{font-family:'DM Serif Display',serif;font-size:17px;color:#c9a84c;}
+.ino-row{display:flex;align-items:center;gap:8px;}
+.ino-row input{flex:1;}
+.ino-tag{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;display:none;}
+.ino-tag.ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
+.ino-tag.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.action-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #dde3eb;padding:14px 24px;display:flex;align-items:center;justify-content:flex-end;gap:10px;z-index:50;box-shadow:0 -2px 12px rgba(13,38,71,0.08);}
+.btn{padding:10px 22px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;border:none;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+.btn-ghost{background:#fff;color:#5a6a80;border:1.5px solid #c8d2de;}
+.btn-ghost:hover{border-color:#0d2647;color:#0d2647;}
+.btn-navy{background:#0d2647;color:#fff;}
+.btn-navy:hover{background:#162d52;}
+.btn-gold{background:#c9a84c;color:#0d2647;font-weight:700;}
+.btn-gold:hover{background:#d4af5a;}
+.btn-teal{background:#0ea5a0;color:#fff;}
+.btn-teal:hover{background:#0d9490;}
+#inv-toast{position:fixed;bottom:80px;right:22px;padding:9px 17px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity 0.3s,transform 0.3s;pointer-events:none;color:#fff;}
+/* BA preview panel */
+.ba-preview{background:#fff;border:1px solid #dde3eb;border-radius:10px;padding:16px 18px;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.ba-preview h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7a94;margin-bottom:12px;}
+.ba-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;}
+.ba-row:last-child{border-bottom:none;}
+.ba-row .bn{font-weight:700;color:#0d2647;min-width:20px;}
+.ba-row .bl{color:#6b7280;min-width:180px;}
+.ba-row .bv{color:#1a2744;font-weight:500;}
+@media(max-width:600px){
+  .inv-wrap{padding:16px 12px 72px;}
+  .r2{grid-template-columns:1fr;}
+  .r2 .f:first-child{border-right:none;}
+  .gst-strip{grid-template-columns:1fr 1fr;}
+  .action-bar{flex-wrap:wrap;}
+  .ba-row .bl{min-width:130px;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="inv-toast"></div>
+<div class="inv-wrap">
+
+  <a href="/billing/drafts" class="back-link">← Back to All Drafts</a>
+
+  <div class="page-header">
+    <h2>✏️ Review &amp; Generate Invoice</h2>
+  </div>
+
+  <!-- DRAFT META -->
+  <div class="draft-meta">
+    <div class="dm-item"><div class="dm-label">Client</div><div class="dm-val">{{ draft.client_name }}</div></div>
+    <div class="dm-item"><div class="dm-label">Firm</div><div class="dm-val">{{ draft.firm or '—' }}</div></div>
+    <div class="dm-item"><div class="dm-label">Financial Year</div><div class="dm-val">{{ draft.fy or '—' }}</div></div>
+    <div class="dm-item"><div class="dm-label">Submitted By</div><div class="dm-val">{{ draft.emp_name }}</div></div>
+    <div class="dm-item"><div class="dm-label">Submitted On</div><div class="dm-val">{{ draft.created_at }}</div></div>
+  </div>
+
+  <!-- BILLING ADVICE PREVIEW -->
+  <div class="section-head"><div class="s-icon navy">📄</div><div class="s-title">Billing Advice (Intern Filled)</div><div class="s-line"></div></div>
+  <div class="ba-preview">
+    <h4>Review before adding fees</h4>
+    <div id="baPreview"></div>
+  </div>
+
+  <!-- REIMBURSEMENTS SECTION -->
+  <div class="section-head" id="reimb-section-head" style="display:none">
+    <div class="s-icon" style="background:#059669">💸</div>
+    <div class="s-title">Reimbursements</div>
+    <div class="s-line"></div>
+    <span class="s-badge" style="background:rgba(5,150,105,.1);color:#065f46;border-color:rgba(5,150,105,.25)">Approved &amp; Unbilled</span>
+  </div>
+  <div id="reimb-panel" style="display:none">
+    <div style="background:#fff;border:1px solid #dde3eb;border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.05)">
+      <div id="reimb-rows"></div>
+      <div class="amt-row" style="border-top:2px solid #dde3eb">
+        <span class="al" style="font-weight:600;color:#065f46">Total Reimbursements</span>
+        <span class="av" id="reimb-total" style="color:#065f46">₹0.00</span>
+      </div>
+    </div>
+  </div>
+  <div id="reimb-empty" style="display:none;background:#f9fafb;border:1px dashed #dde3eb;border-radius:10px;padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af;margin-bottom:6px">
+    No approved reimbursements for this company.
+  </div>
+
+  <!-- ADMIN: FEES & GST -->
+  <div class="section-head"><div class="s-icon gold">💰</div><div class="s-title">Professional Fees</div><div class="s-line"></div><span class="s-badge">Admin fills</span></div>
+  <div class="fg">
+    <div class="f"><label>Firm GSTIN</label><input type="text" id="jaaGSTIN" placeholder="27AAAAA0000A1Z5" maxlength="15" oninput="detectGST()"></div>
+    <div class="f"><label>Professional Fee (₹)</label><input type="number" id="profFee" placeholder="0.00" oninput="calcAmts()"></div>
+    <div class="f">
+      <label>GST Rate</label>
+      <div class="tg">
+        <label><input type="radio" name="gstR" value="18" checked onchange="calcAmts()"><span>18%</span></label>
+        <label><input type="radio" name="gstR" value="12" onchange="calcAmts()"><span>12%</span></label>
+        <label><input type="radio" name="gstR" value="5" onchange="calcAmts()"><span>5%</span></label>
+        <label><input type="radio" name="gstR" value="0" onchange="calcAmts()"><span>Nil</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="gst-strip">
+    <div><div class="gcl">GST Type</div><div class="gcv" id="gstType" style="font-size:13px;color:rgba(255,255,255,0.6)">—</div><div class="gcs" id="gstDesc">Enter GSTIN above</div></div>
+    <div><div class="gcl">Rate</div><div class="gcv" id="gstRate">—%</div><div class="gcs" id="gstBreak">—</div></div>
+    <div><div class="gcl">GST Amount</div><div class="gcv" id="gstAmt">₹0</div></div>
+  </div>
+
+  <div class="amt-panel">
+    <div class="amt-row"><span class="al">Professional Fee</span><span class="av" id="dFee">₹0.00</span></div>
+    <div class="amt-row"><span class="al">OOP (Trainee + Partner)</span><span class="av" id="dOOP">₹0.00</span></div>
+    <div class="amt-row"><span class="al">Filing Charges (CRA2 + CRA4)</span><span class="av" id="dFil">₹0.00</span></div>
+    <div class="amt-row" id="reimb-grand-row" style="display:none"><span class="al" style="color:#059669">Reimbursements (selected)</span><span class="av" id="dReimb" style="color:#059669">₹0.00</span></div>
+    <div class="amt-row gr"><span class="al" id="gstLabel">GST (18%)</span><span class="av" id="dGST">₹0.00</span></div>
+    <div class="amt-row tr"><span class="al">Total Payable</span><span class="av" id="dTot">₹0.00</span></div>
+  </div>
+
+  <!-- INVOICE NUMBER -->
+  <div class="section-head"><div class="s-icon gold">🔢</div><div class="s-title">Invoice Details</div><div class="s-line"></div><span class="s-badge">Admin fills</span></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f">
+        <label>Invoice Number</label>
+        <div class="ino-row">
+          <input type="text" id="invoiceNo" placeholder="e.g. JAA/2024-25/001" oninput="onInvEdit()">
+          <span class="ino-tag" id="invTag"></span>
+        </div>
+      </div>
+      <div class="f"><label>Invoice Date</label><input type="date" id="invoiceDate"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><div class="s-icon gold">📝</div><div class="s-title">Admin Record</div><div class="s-line"></div><span class="s-badge">Admin fills</span></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>Name of Person Issuing Invoice</label><input type="text" id="adminIssuer" placeholder="Admin staff name"></div>
+      <div class="f"><label>Signature / Initials</label><input type="text" id="adminInit" placeholder="Initials"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <button class="btn btn-ghost" onclick="doPrint('ba')">🖨 Print Billing Advice</button>
+  <button class="btn btn-teal" onclick="doExport('ba')">📥 BA PDF</button>
+  <button class="btn btn-navy" onclick="doPrint('inv')">🖨 Print Invoice</button>
+  <button class="btn btn-gold" onclick="doExport('inv')">📥 Invoice PDF</button>
+</div>
+
+<script type="application/json" id="draft-data">{{ draft_data_json | safe }}</script>
+<script type="application/json" id="companies-data">{{ companies_json | safe }}</script>
+<script type="application/json" id="reimb-data">{{ reimb_summary | default('{}') | safe }}</script>
+<script>
+const D = JSON.parse(document.getElementById('draft-data').textContent);
+const COMPANIES = JSON.parse(document.getElementById('companies-data').textContent);
+// Inject draft ID for auto ref number
+D.draftId = {{ draft.id if draft else 0 }};
+
+// Init
+document.getElementById('invoiceDate').valueAsDate = new Date();
+document.querySelectorAll('input[name="gstR"]').forEach(r => r.addEventListener('change', calcAmts));
+
+// Render billing advice preview
+(function renderPreview(){
+  const rows = [
+    [1,'Firm Name for Bill', D.firm||'—'],
+    [2,'Client / Company', D.clientName+(D.clientAddr?'\n'+D.clientAddr:'')],
+    [3,'Audit Date / Items', (D.auditDate||'—')+' · Items: '+(D.numItems||'—')],
+    [4,'UDIN / First Time / FY', 'UDIN: '+(D.udin||'—')+' · First Time: '+(D.firstTime||'—')+' · FY: '+(D.fy||'—')],
+    [5,'Particulars', D.serviceDesc||'—'],
+    [6,'XBRL / Partners', 'XBRL: '+(D.xbrl||'0')+' · '+(D.partner1||'—')+' · '+(D.partner2||'—')],
+    [7,'Trainees', (D.trainee1||'—')+' · '+(D.trainee2||'—')+' · '+(D.trainee3||'—')],
+    [8,'OOP Months', D.months||'—'],
+    [9,'Trainee OOP', '₹'+(parseFloat(D.tOOP1)||0).toLocaleString('en-IN')+' / ₹'+(parseFloat(D.tOOP2)||0).toLocaleString('en-IN')+' / ₹'+(parseFloat(D.tOOP3)||0).toLocaleString('en-IN')],
+    [10,'Partner OOP', '₹'+(parseFloat(D.pOOP1)||0).toLocaleString('en-IN')+' / ₹'+(parseFloat(D.pOOP2)||0).toLocaleString('en-IN')],
+    [11,'CRA2 / CRA4', 'CRA2: '+(D.cra2By||'—')+' · CRA4: '+(D.cra4By||'—')],
+    [12,'SRN', 'CRA2: '+(D.srnCRA2||'—')+' · CRA4: '+(D.srnCRA4||'—')],
+    [13,'Filing Cost', 'CRA2: ₹'+(parseFloat(D.cra2Cost)||0).toLocaleString('en-IN')+' · CRA4: ₹'+(parseFloat(D.cra4Cost)||0).toLocaleString('en-IN')],
+    [14,'Contact', (D.contactName||'—')+' · '+(D.contactDesig||'—')],
+  ];
+  if(D.additionalInfo) rows.push([15,'Additional Info', D.additionalInfo]);
+  document.getElementById('baPreview').innerHTML = rows.map(([n,l,v]) =>
+    `<div class="ba-row"><span class="bn">${n}</span><span class="bl">${l}</span><span class="bv">${v.replace(/\n/g,'<br>')}</span></div>`
+  ).join('');
+})();
+
+// GST & Calc
+function getR(){return parseFloat(document.querySelector('input[name="gstR"]:checked')?.value||18);}
+function detectGST(){
+  const cG=(D.clientGSTIN||'').trim(), jG=document.getElementById('jaaGSTIN').value.trim();
+  calcAmts();
+  if(!jG){document.getElementById('gstType').textContent='—';document.getElementById('gstDesc').textContent='Enter firm GSTIN';document.getElementById('gstRate').textContent='—%';document.getElementById('gstBreak').textContent='—';return;}
+  const taxSel = D.taxType === 'CGST & SGST' ? true : (cG.length>=2&&jG.length>=2&&cG.substring(0,2)===jG.substring(0,2));
+  const r=getR();
+  document.getElementById('gstType').textContent=taxSel?'CGST + SGST':'IGST';
+  document.getElementById('gstDesc').textContent=taxSel?'Intra-State':'Inter-State';
+  document.getElementById('gstRate').textContent=r+'%';
+  document.getElementById('gstBreak').textContent=taxSel?`${r/2}% + ${r/2}%`:`IGST ${r}%`;
+}
+function calcAmts(){
+  const fee=parseFloat(document.getElementById('profFee').value)||0;
+  const oop=(parseFloat(D.tOOP1)||0)+(parseFloat(D.tOOP2)||0)+(parseFloat(D.tOOP3)||0)+(parseFloat(D.pOOP1)||0)+(parseFloat(D.pOOP2)||0);
+  const c2=parseFloat(D.cra2Cost)||0, c4=parseFloat(D.cra4Cost)||0;
+  const fil=c2+c4,r=getR();
+  const reimbAmt=getSelectedReimbTotal();
+  const tax=fee+oop+fil,gst=tax*r/100,tot=tax+gst+reimbAmt;
+  const f=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('dFee').textContent=f(fee);document.getElementById('dOOP').textContent=f(oop);
+  document.getElementById('dFil').textContent=f(fil);document.getElementById('dGST').textContent=f(gst);
+  document.getElementById('dTot').textContent=f(tot);document.getElementById('gstLabel').textContent=`GST (${r}%)`;
+  document.getElementById('gstAmt').textContent='₹'+Math.round(gst).toLocaleString('en-IN');
+  const reimbRow=document.getElementById('reimb-grand-row');
+  const dReimb=document.getElementById('dReimb');
+  if(reimbAmt>0){reimbRow.style.display='flex';dReimb.textContent=f(reimbAmt);}
+  else{reimbRow.style.display='none';}
+}
+
+// ── Reimbursements ────────────────────────────────────────────────────────────
+const REIMB_DATA = (function(){
+  try{ return JSON.parse(document.getElementById('reimb-data')?.textContent||'{}'); }
+  catch(e){ return {}; }
+})();
+
+function getSelectedReimbTotal(){
+  let t=0;
+  document.querySelectorAll('.reimb-cat-cb:checked').forEach(cb=>{
+    t+=parseFloat(cb.dataset.total||0);
+  });
+  return t;
+}
+
+function renderReimbSection(){
+  const cats=Object.keys(REIMB_DATA);
+  const head=document.getElementById('reimb-section-head');
+  const panel=document.getElementById('reimb-panel');
+  const empty=document.getElementById('reimb-empty');
+  const rowsEl=document.getElementById('reimb-rows');
+  if(cats.length===0){
+    head.style.display='flex'; panel.style.display='none'; empty.style.display='block';
+    return;
+  }
+  head.style.display='flex'; panel.style.display='block'; empty.style.display='none';
+  const f=v=>'₹'+parseFloat(v).toLocaleString('en-IN',{minimumFractionDigits:2});
+  let html='';
+  let grandTotal=0;
+  cats.forEach(cat=>{
+    const d=REIMB_DATA[cat];
+    grandTotal+=d.total;
+    const ids=JSON.stringify(d.ids).replace(/"/g,'&quot;');
+    html+=`<div class="amt-row" style="align-items:center">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;color:#5a6a80">
+        <input type="checkbox" class="reimb-cat-cb"
+               data-total="${d.total}" data-ids="${ids}"
+               checked onchange="calcAmts()">
+        ${cat}
+      </label>
+      <span class="av">${f(d.total)}</span>
+    </div>`;
+  });
+  rowsEl.innerHTML=html;
+  document.getElementById('reimb-total').textContent=f(grandTotal);
+  calcAmts();
+}
+
+// Collect selected reimbursement ids for billing
+function getSelectedReimbIds(){
+  const ids=[];
+  document.querySelectorAll('.reimb-cat-cb:checked').forEach(cb=>{
+    try{ JSON.parse(cb.dataset.ids.replace(/&quot;/g,'"')).forEach(id=>ids.push(id)); }
+    catch(e){}
+  });
+  return ids;
+}
+
+// Render on load
+renderReimbSection();
+
+let invManual=false;
+function onInvEdit(){ invManual=true; const tag=document.getElementById('invTag'); tag.textContent='Custom'; tag.className='ino-tag warn'; tag.style.display='inline-block'; }
+
+// Build docs
+function getCalc(){
+  const fee=parseFloat(document.getElementById('profFee').value)||0;
+  const oop=(parseFloat(D.tOOP1)||0)+(parseFloat(D.tOOP2)||0)+(parseFloat(D.tOOP3)||0)+(parseFloat(D.pOOP1)||0)+(parseFloat(D.pOOP2)||0);
+  const c2=parseFloat(D.cra2Cost)||0,c4=parseFloat(D.cra4Cost)||0,fil=c2+c4,r=getR();
+  const tax=fee+oop+fil,gst=tax*r/100,tot=tax+gst;
+  const cG=(D.clientGSTIN||'').trim(),jG=document.getElementById('jaaGSTIN').value.trim();
+  const intra=D.taxType==='CGST & SGST'||(cG.length>=2&&jG.length>=2&&cG.substring(0,2)===jG.substring(0,2));
+  let gR='';
+  if(r>0){if(intra)gR=`<tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">CGST @ ${r/2}%</td><td colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;text-align:right;color:#059669">₹${(gst/2).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr><tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">SGST @ ${r/2}%</td><td colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;text-align:right;color:#059669">₹${(gst/2).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>`;
+  else gR=`<tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">IGST @ ${r}%</td><td colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;text-align:right;color:#059669">₹${gst.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>`;}
+  return{fee,oop,fil,tax,gst,tot,r,gR,intra,jaaGSTIN:jG,taxType:intra?'CGST & SGST':'IGST',invoiceNo:document.getElementById('invoiceNo').value||'—',invoiceDate:fmtDate(document.getElementById('invoiceDate').value),adminIssuer:document.getElementById('adminIssuer').value||'—',adminInit:document.getElementById('adminInit').value||'—'};
+}
+
+function fmtDate(v,opts){if(!v)return'—';return new Date(v).toLocaleDateString('en-IN',opts||{day:'2-digit',month:'long',year:'numeric'});}
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function buildBA(c){
+  const f2=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const row=(n,l,v)=>`<tr style="border-bottom:1px solid #e8e5df"><td style="padding:9px 10px;font-weight:700;color:#1a2744;width:22px;vertical-align:top;font-size:13px">${n}</td><td style="padding:9px 10px;color:#6b7280;width:200px;font-weight:500;vertical-align:top;font-size:13px">${l}</td><td style="padding:9px 10px;color:#1a2744;font-weight:500;vertical-align:top;font-size:13px">${v}</td></tr>`;
+  const bp=(val,yes='Yes')=>`<span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;background:${val===yes?'#dcfce7':'#fee2e2'};color:${val===yes?'#15803d':'#dc2626'}">${val}</span>`;
+  const bf=val=>`<span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;background:${val==='JAA'?'#dbeafe':'#f3f4f6'};color:${val==='JAA'?'#1d4ed8':'#6b7280'}">${val}</span>`;
+  let tR='';[[D.trainee1,parseFloat(D.tOOP1)||0],[D.trainee2,parseFloat(D.tOOP2)||0],[D.trainee3,parseFloat(D.tOOP3)||0]].forEach(([n,v],i)=>{if(n||v)tR+=`<tr><td style="padding:3px 6px;font-size:12px">${e(n)||'Trainee '+(i+1)}</td><td style="padding:3px 6px;font-size:12px;text-align:right;font-weight:600">${f2(v)}</td></tr>`;});
+  let pR='';[[D.partner1,parseFloat(D.pOOP1)||0],[D.partner2,parseFloat(D.pOOP2)||0]].forEach(([n,v],i)=>{if(n||v)pR+=`<tr><td style="padding:3px 6px;font-size:12px">${e(n)||'Partner '+(i+1)}</td><td style="padding:3px 6px;font-size:12px;text-align:right;font-weight:600">${f2(v)}</td></tr>`;});
+  return`<div style="padding:28px 32px;font-family:Arial,sans-serif;background:#fff;color:#1a2744">
+  <div style="text-align:center;padding-bottom:14px;border-bottom:3px solid #1a2744"><div style="font-size:24px;font-weight:700;color:#1a2744;font-family:Georgia,serif">Joshi Apte &amp; Associates</div><div style="font-size:12px;font-weight:700;color:#1a2744;letter-spacing:2px;text-transform:uppercase;margin-top:4px">Cost Accountants</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 14px;border-bottom:1px solid #e8e5df"><div style="font-size:18px;font-weight:800;color:#1a2744;letter-spacing:2px;text-transform:uppercase">Billing Advice</div><div style="text-align:right"><div style="font-size:11.5px;color:#6b7280">Ref: <strong style="color:#1a2744">${e(c.invoiceNo)}</strong></div><div style="font-size:11.5px;color:#6b7280;margin-top:2px">Date: <strong style="color:#1a2744">${c.invoiceDate}</strong></div></div></div>
+  <table style="width:100%;border-collapse:collapse;margin-top:4px">
+    ${row(1,'Firm Name for Bill',`<strong>${e(D.firm)||'—'}</strong>`)}
+    ${row(2,'Name &amp; Address of Company',`<strong>${e(D.clientName)||'—'}</strong>${D.clientAddr?'<br><span style="font-size:12px;color:#6b7280">'+e(D.clientAddr).replace(/\n/g,'<br>')+'</span>':''}<br><span style="font-size:11.5px;color:#6b7280">Applicable Tax: <strong>${e(D.taxType)}</strong></span>`)}
+    ${row(3,'Date of Cost Audit Report',`${D.auditDate?fmtDate(D.auditDate,{day:'2-digit',month:'short',year:'numeric'}):'—'} &nbsp; Items: <strong>${e(D.numItems)||'—'}</strong>`)}
+    ${row(4,'UDIN / First Time / FY',`UDIN: ${bp(D.udin||'—')} &nbsp; First Time: ${bp(D.firstTime||'—')} &nbsp; FY: <strong>${e(D.fy)||'—'}</strong>`)}
+    ${row(5,'Particulars of Service',e(D.serviceDesc)||'—')}
+    ${row(6,'XBRL &amp; Partner / Associate',`XBRL: <strong>${e(D.xbrl)||'0'}</strong><br>1. ${e(D.partner1)||'—'} &nbsp; 2. ${e(D.partner2)||'—'}`)}
+    ${row(7,'Trainee Assisted',`1. ${e(D.trainee1)||'—'} &nbsp; 2. ${e(D.trainee2)||'—'} &nbsp; 3. ${e(D.trainee3)||'—'}`)}
+    ${row(8,'Months — OOP Incurred',e(D.months)||'—')}
+    ${row(9,'OOP of Trainee',tR?`<table style="border-collapse:collapse">${tR}</table>`:'—')}
+    ${row(10,'OOP of Partner / Associate / CMA',pR?`<table style="border-collapse:collapse">${pR}</table>`:'—')}
+    ${row(11,'Who Filed CRA2 / CRA4',`CRA2: ${bf(D.cra2By||'—')} &nbsp; CRA4: ${bf(D.cra4By||'—')}`)}
+    ${row(12,'SRN of CRA2 &amp; CRA4',`CRA2: <strong>${e(D.srnCRA2)||'—'}</strong> | CRA4: <strong>${e(D.srnCRA4)||'—'}</strong>`)}
+    ${row(13,'Cost of Filing by JAA',`CRA2: <strong>${f2(parseFloat(D.cra2Cost)||0)}</strong> | CRA4: <strong>${f2(parseFloat(D.cra4Cost)||0)}</strong>`)}
+    ${row(14,'Concerned Person',`Name: <strong>${e(D.contactName)||'—'}</strong> &nbsp; Designation: <strong>${e(D.contactDesig)||'—'}</strong>`)}
+    ${D.additionalInfo?row(15,'Additional Information',e(D.additionalInfo)):''}
+  </table>
+  <div style="margin-top:14px;background:#fdf8ee;border-radius:6px;padding:11px 15px;border-left:3px solid #c9a84c">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a84c;margin-bottom:8px">Admin Only</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px">Date of Issue</div>${c.invoiceDate}</div>
+      <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px">Issued By</div>${e(c.adminIssuer)}</div>
+      <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px">Invoice Number</div>${e(c.invoiceNo)}</div>
+      <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px">Signature / Initials</div>${e(c.adminInit)}</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding-top:12px;border-top:1.5px solid #e8e5df;display:flex;justify-content:space-between;align-items:flex-end">
+    <div style="font-size:11.5px;color:#6b7280;line-height:1.7">Subject to Mumbai Jurisdiction.<br>Internal use only.</div>
+    <div style="text-align:right"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px">Advice from (Partner)</div><div style="font-size:12px;font-weight:700;color:#1a2744;margin-top:2px;font-family:Georgia,serif">${e(D.advicePartner)||'—'}</div><div style="font-size:11px;color:#6b7280;margin-top:1px">Date: ${D.adviceDate?fmtDate(D.adviceDate):'—'}</div></div>
+  </div>
+</div>`;
+}
+
+function toWords(n){
+  const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function conv(n){
+    if(n<20)return a[n];
+    if(n<100)return b[Math.floor(n/10)]+(n%10?' '+a[n%10]:'');
+    if(n<1000)return a[Math.floor(n/100)]+' Hundred'+(n%100?' '+conv(n%100):'');
+    if(n<100000)return conv(Math.floor(n/1000))+' Thousand'+(n%1000?' '+conv(n%1000):'');
+    if(n<10000000)return conv(Math.floor(n/100000))+' Lakh'+(n%100000?' '+conv(n%100000):'');
+    return conv(Math.floor(n/10000000))+' Crore'+(n%10000000?' '+conv(n%10000000):'');
+  }
+  const r=Math.round(n);
+  return(r===0?'Zero':conv(r))+' Only';
+}
+
+function buildInv(c){
+  const f=v=>v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const rounded=Math.round(c.tot);
+  const roundDiff=+(rounded-c.tot).toFixed(2);
+  const words='Rupees '+toWords(rounded);
+  const refNo=c.invoiceNo&&c.invoiceNo!=='—'?c.invoiceNo:'MUM/'+String(D.draftId||0).padStart(8,'0');
+  return`
+<div style="font-family:Arial,sans-serif;background:#fff;color:#1a2744;padding:32px 40px;max-width:720px;margin:0 auto;font-size:12px">
+
+  <!-- HEADER: Firm name + address LEFT | Original/Ref/Date RIGHT -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2.5px solid #1a2744;margin-bottom:14px">
+    <div>
+      <div style="font-size:19px;font-weight:700;font-family:Georgia,serif;color:#1a2744">JOSHI APTE &amp; ASSOCIATES</div>
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:2px;color:#1a2744;margin-top:3px">COST ACCOUNTANTS</div>
+      <div style="font-size:10px;color:#374151;margin-top:8px;line-height:1.8">
+        "CMA Pride", 1st Floor, Plot No. 6, S.No. 16/6,<br>
+        Erandawana Co-op Hsg. Soc., Erandawana, Pune 411 004.<br>
+        Phone: (020) 2543 6408 / 2545 3595 &nbsp; Telefax: (020) 2543 6408<br>
+        e-mail: cma.joshi.apte@gmail.com
+      </div>
+    </div>
+    <div style="text-align:right;font-size:10.5px;color:#374151;line-height:2">
+      <div>Original for Recipient</div>
+      <div>Ref: <strong>${e(refNo)}</strong></div>
+      <div>Date: <strong>${c.invoiceDate}</strong></div>
+    </div>
+  </div>
+
+  <!-- TO BLOCK -->
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;color:#6b7280;margin-bottom:4px">To:</div>
+    <div style="font-size:13px;font-weight:700;color:#1a2744">${e(D.clientName)||'—'}</div>
+    <div style="font-size:11px;color:#374151;line-height:1.8;margin-top:3px">${e(D.clientAddr||'').replace(/\n/g,'<br>')}</div>
+    ${D.clientGSTIN?`<div style="font-size:11px;color:#374151;margin-top:3px">GSTN: <strong>${e(D.clientGSTIN)}</strong></div>`:''}
+    ${D.contactName?`<div style="font-size:11px;color:#374151;margin-top:2px">Attn: ${e(D.contactName)}${D.contactDesig?', '+e(D.contactDesig):''}</div>`:''}
+  </div>
+
+  <!-- TAX INVOICE HEADING -->
+  <div style="font-size:14px;font-weight:700;color:#1a2744;text-align:center;border:1.5px solid #1a2744;padding:6px 0;margin-bottom:14px;letter-spacing:1.5px">TAX INVOICE</div>
+
+  <!-- PARTICULARS TABLE -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:0">
+    <thead>
+      <tr style="background:#1a2744">
+        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#fff">Particulars</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:600;color:#fff;white-space:nowrap">Amount (Rs.)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #e5e7eb">
+        <td style="padding:9px 12px;font-size:12px">${e(D.serviceDesc)||'Cost Audit FY '+e(D.fy||'—')}</td>
+        <td style="padding:9px 12px;font-size:12px;text-align:right">&#8377;${f(c.fee)}</td>
+      </tr>
+      ${c.oop>0?`<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:9px 12px;font-size:12px">Out of Pocket Expenses</td><td style="padding:9px 12px;font-size:12px;text-align:right">&#8377;${f(c.oop)}</td></tr>`:''}
+      ${c.fil>0?`<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:9px 12px;font-size:12px">CRA2 and CRA4 Expenses</td><td style="padding:9px 12px;font-size:12px;text-align:right">&#8377;${f(c.fil)}</td></tr>`:''}
+      <tr><td colspan="2" style="padding:4px 0">&nbsp;</td></tr>
+      ${c.intra?`
+      <tr style="border-bottom:1px solid #e5e7eb">
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669">CGST @ 9%</td>
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669;text-align:right">&#8377;${f(c.gst)}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #e5e7eb">
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669">SGST @ 9%</td>
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669;text-align:right">&#8377;${f(c.gst)}</td>
+      </tr>`:`
+      <tr style="border-bottom:1px solid #e5e7eb">
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669">IGST @ 18%</td>
+        <td style="padding:7px 12px;font-size:11.5px;color:#059669;text-align:right">&#8377;${f(c.gst*2)}</td>
+      </tr>`}
+      ${Math.abs(roundDiff)>=0.01?`<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:7px 12px;font-size:11px;color:#6b7280">Rounded off</td><td style="padding:7px 12px;font-size:11px;color:#6b7280;text-align:right">${roundDiff>0?'+':'-'}${f(Math.abs(roundDiff))}</td></tr>`:''}
+      <tr style="background:#1a2744">
+        <td style="padding:10px 12px;font-size:12.5px;font-weight:700;color:#fff">Rounded off Total</td>
+        <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#c9a84c;text-align:right">&#8377;${f(rounded)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- AMOUNT IN WORDS + FIRM DETAILS -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:14px;padding-top:10px;border-top:1px solid #e5e7eb">
+    <div style="width:55%">
+      <span style="font-size:11.5px;font-weight:600;color:#1a2744">Amount in Words: </span>
+      <span style="font-size:11.5px;color:#374151">${words}</span>
+    </div>
+    <div style="text-align:right;font-size:10.5px;color:#374151;line-height:2">
+      <strong>PAN No:</strong> AAHFJ0018Q<br>
+      <strong>TAN No:</strong> PNEJ07156C<br>
+      <strong>GSTN:</strong> 27AAHFJ0018Q1Z5<br>
+      <strong>Service Code:</strong> 998231
+    </div>
+  </div>
+
+  <!-- BANK + SIGNATURE -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:18px;padding-top:14px;border-top:2px solid #1a2744">
+    <div style="font-size:10.5px;color:#374151;line-height:2;width:50%">
+      <strong style="font-size:11px;color:#1a2744">Bank Details for Payment</strong><br>
+      <strong>Bank:</strong> Bank of Maharashtra<br>
+      <strong>Branch:</strong> Deccan Gymkhana, Pune<br>
+      <strong>A/c No.:</strong> 60417830921<br>
+      <strong>IFSC:</strong> MAHB0000464<br>
+      <strong>A/c Type:</strong> Current<br><br>
+      Subject to Mumbai Jurisdiction.<br>
+      Payment due within 30 days.
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px">For and on behalf of</div>
+      <div style="font-size:13px;font-weight:700;color:#1a2744;font-family:Georgia,serif;margin-top:3px">Joshi Apte &amp; Associates</div>
+      <div style="font-size:10.5px;color:#374151">Cost Accountants</div>
+      <div style="width:170px;height:55px;border:1.5px dashed #c8d2de;border-radius:4px;margin:10px 0 6px auto;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:9px;color:#c8d2de">Signature</span>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#1a2744">${e(D.advicePartner)||'Authorised Signatory'}</div>
+    </div>
+  </div>
+
+</div>
+`;}
+
+function openWindow(html, title){
+  const win=window.open('','_blank','width=1000,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>@page{margin:1cm;size:A4;}body{margin:0;padding:0;font-family:Arial,sans-serif;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>${html}<script>window.onload=function(){setTimeout(()=>window.print(),300);}<\/script></body></html>`);
+  win.document.close();
+}
+function doPrint(type){ const c=getCalc(); openWindow(type==='ba'?buildBA(c):buildInv(c), type==='ba'?'Billing Advice':'Invoice'); }
+function doExport(type){ doPrint(type); }
+function showToast(msg){const t=document.getElementById('inv-toast');t.textContent=msg;t.style.background='#0d2647';t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2000);}
+</script>
+{% endblock %}

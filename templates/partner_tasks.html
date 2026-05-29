@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Tasks — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.pt-topbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px }
+.pt-topbar h2 { font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin:0 }
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.pt-kpis { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px }
+.pt-kpi  { background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden }
+.pt-kpi::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--teal)) }
+.pt-kpi .kv { font-family:'DM Serif Display',serif;font-size:28px;line-height:1;color:var(--kc,var(--navy)) }
+.pt-kpi .kl { font-size:11.5px;color:var(--text-light);font-weight:500;margin-top:4px;letter-spacing:.3px }
+
+/* ── Filters ─────────────────────────────────────────────────────────────── */
+.filter-bar {
+  background:#fff;border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:20px;
+  display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+}
+.filter-bar select, .filter-bar input {
+  padding:7px 11px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-family:'DM Sans',sans-serif;font-size:13px;background:#fff;
+  outline:none;color:var(--text);cursor:pointer;
+}
+.filter-bar select:focus, .filter-bar input:focus { border-color:var(--teal) }
+.filter-bar .fl { display:flex;flex-direction:column;gap:4px }
+.filter-bar .fl label { font-size:11px;font-weight:600;color:var(--text-mid);letter-spacing:.3px }
+.btn-filter {
+  padding:7px 16px;border:none;border-radius:var(--r-sm);
+  background:var(--navy);color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;
+}
+.btn-filter:hover { background:var(--navy-mid) }
+.btn-clear {
+  padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  background:#fff;color:var(--text-mid);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.btn-clear:hover { border-color:var(--navy);color:var(--navy) }
+
+/* ── New task button ─────────────────────────────────────────────────────── */
+.btn-new-task {
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border:none;border-radius:var(--r-sm);
+  background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+  color:var(--navy);font-family:'DM Sans',sans-serif;font-size:13.5px;
+  font-weight:700;cursor:pointer;transition:all .15s;
+}
+.btn-new-task:hover { box-shadow:0 4px 14px rgba(201,168,76,.35);transform:translateY(-1px) }
+
+/* ── Task cards ──────────────────────────────────────────────────────────── */
+.task-card {
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:8px;transition:box-shadow .15s;
+}
+.task-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07) }
+.task-card.is-overdue { border-left:4px solid #DC2626 }
+.task-card.is-done    { opacity:.6 }
+
+.task-row { display:flex;align-items:flex-start;justify-content:space-between;gap:12px }
+.task-title { font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px }
+.task-desc  { font-size:12.5px;color:var(--text-mid);line-height:1.45 }
+.task-meta  { display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-light);margin-top:8px }
+.meta-chip  { display:flex;align-items:center;gap:3px }
+
+.sbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700 }
+.s-pending    { color:#78350F;background:#FEF3C7 }
+.s-inprogress { color:#1D4ED8;background:#EFF6FF }
+.s-done       { color:#065F46;background:#D1FAE5 }
+.overdue-badge { display:inline-flex;align-items:center;gap:3px;background:#FEE2E2;color:#991B1B;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700 }
+
+.type-badge     { display:inline-flex;align-items:center;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.3px }
+.type-regular   { background:#F3F4F6;color:#6B7280 }
+.type-emergency { background:#FEE2E2;color:#991B1B }
+.type-specific  { background:#FEF3C7;color:#92400E }
+
+/* ── Co section ──────────────────────────────────────────────────────────── */
+.co-section { margin-bottom:24px }
+.co-section-hdr {
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:linear-gradient(135deg,var(--navy),var(--navy-mid));
+  border-radius:var(--r-sm) var(--r-sm) 0 0;color:#fff;
+}
+.co-section-hdr .co-name { font-size:13.5px;font-weight:700 }
+.co-section-hdr .co-cnt  { font-size:12px;opacity:.6;margin-left:auto }
+.co-section-body { border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);padding:12px }
+
+/* ── Empty ───────────────────────────────────────────────────────────────── */
+.empty-tasks { text-align:center;padding:48px 20px;color:var(--text-light);background:#fff;border:1px solid var(--border);border-radius:var(--r) }
+.empty-tasks .ei { font-size:36px;margin-bottom:10px }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.modal.task-modal { width:560px;max-width:96vw }
+.task-modal .modal-header { background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:16px 16px 0 0;border-bottom:none }
+.task-modal .modal-title  { color:#fff }
+.task-modal .modal-close  { background:rgba(255,255,255,.12);color:#fff }
+.task-modal .modal-close:hover { background:rgba(255,255,255,.22) }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#pt-toast {
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:11px 18px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;
+  background:var(--navy);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+#pt-toast.show { opacity:1 }
+#pt-toast.ok  { background:#065F46 }
+#pt-toast.err { background:#991B1B }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Task Management</span>
+  <span class="topbar-sub">{{ session.get('branch_label','') }}</span>
+</div>
+
+<div class="page-content">
+
+  <!-- Header row -->
+  <div class="pt-topbar">
+    <h2>All Tasks</h2>
+    <button class="btn-new-task" onclick="openNewTask()">➕ New Task</button>
+  </div>
+
+  <!-- KPI strip -->
+  {% set total    = all_tasks | length %}
+  {% set pending  = all_tasks | selectattr('status','equalto','Pending') | list | length %}
+  {% set inprog   = all_tasks | selectattr('status','equalto','In Progress') | list | length %}
+  {% set overdue  = all_tasks | selectattr('due_date','lt',today) | rejectattr('status','equalto','Done') | list | length %}
+  <div class="pt-kpis">
+    <div class="pt-kpi" style="--kc:var(--teal)">
+      <div class="kv">{{ total }}</div><div class="kl">Total Tasks</div>
+    </div>
+    <div class="pt-kpi" style="--kc:var(--gold)">
+      <div class="kv">{{ pending }}</div><div class="kl">Pending</div>
+    </div>
+    <div class="pt-kpi" style="--kc:#3B82F6">
+      <div class="kv">{{ inprog }}</div><div class="kl">In Progress</div>
+    </div>
+    <div class="pt-kpi" style="--kc:#DC2626">
+      <div class="kv">{{ overdue }}</div><div class="kl">Overdue</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" action="/partner/tasks" class="filter-bar">
+    <div class="fl">
+      <label>Company</label>
+      <select name="company">
+        <option value="">All Companies</option>
+        {% for co in all_cos %}
+        <option value="{{ co.unique_code }}" {% if f_company==co.unique_code %}selected{% endif %}>{{ co.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fl">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All Statuses</option>
+        {% for s in ['Pending','In Progress','Done'] %}
+        <option value="{{ s }}" {% if f_status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fl">
+      <label>Assigned To</label>
+      <select name="assigned_to">
+        <option value="">All Employees</option>
+        {% for e in all_emps %}
+        <option value="{{ e.emp_id }}" {% if f_emp==e.emp_id %}selected{% endif %}>{{ e.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-filter">Filter</button>
+    <a href="/partner/tasks" class="btn-clear">Clear</a>
+  </form>
+
+  <!-- Tasks grouped by company -->
+  {% if tasks_by_company %}
+    {% for company_name, tasks in tasks_by_company.items() %}
+    <div class="co-section">
+      <div class="co-section-hdr">
+        <span class="co-name">🏢 {{ company_name }}</span>
+        <span class="co-cnt">{{ tasks|length }} task{{ 's' if tasks|length!=1 else '' }}</span>
+      </div>
+      <div class="co-section-body">
+        {% for t in tasks %}
+        {% set is_over = t.due_date < today and t.status != 'Done' %}
+        {% set sc = 's-done' if t.status=='Done' else ('s-inprogress' if t.status=='In Progress' else 's-pending') %}
+        <div class="task-card {% if is_over %}is-overdue{% endif %} {% if t.status=='Done' %}is-done{% endif %}">
+          <div class="task-row">
+            <div style="flex:1;min-width:0">
+              <div class="task-title">{{ t.title }}</div>
+              {% if t.description %}<div class="task-desc">{{ t.description }}</div>{% endif %}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+              {% set tt = t.get('task_type','Regular') %}
+              {% set tc = 'type-emergency' if tt=='Emergency' else ('type-specific' if tt=='Specific' else 'type-regular') %}
+              <span class="type-badge {{ tc }}">{{ tt }}</span>
+              {% if is_over %}<span class="overdue-badge">⚠ Overdue</span>{% endif %}
+              <span class="sbadge {{ sc }}">{{ t.status }}</span>
+            </div>
+          </div>
+          <div class="task-meta">
+            <span class="meta-chip">📅 {{ t.due_date }}</span>
+            <span class="meta-chip">👤 {{ t.assigned_to_name }} ({{ t.assigned_to_role }})</span>
+            <span class="meta-chip" style="color:var(--text-light)">by {{ t.assigned_by_name }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-tasks">
+    <div class="ei">📋</div>
+    <div>No tasks found{{ ' matching your filters' if f_company or f_status or f_emp else '' }}.</div>
+  </div>
+  {% endif %}
+
+</div><!-- /page-content -->
+
+
+<!-- ── New Task Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="new-task-overlay" onclick="overlayClick(event)">
+  <div class="modal task-modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Create New Task</div>
+      <button class="modal-close" onclick="closeNewTask()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Company *</label>
+        <select id="nt-company" class="form-control" onchange="loadAssignees()">
+          <option value="">— Select company —</option>
+          {% for co in all_cos %}
+          <option value="{{ co.unique_code }}">{{ co.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Task Title *</label>
+        <input type="text" id="nt-title" class="form-control" placeholder="e.g. Prepare trial balance">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="nt-desc" class="form-control" rows="3"
+                  style="resize:vertical;height:auto"
+                  placeholder="Optional details…"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group">
+          <label class="form-label">Assign To *</label>
+          <select id="nt-assignee" class="form-control">
+            <option value="">— Select company first —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Task Type *</label>
+          <select id="nt-type" class="form-control">
+            <option value="Regular">Regular</option>
+            <option value="Emergency">🔴 Emergency</option>
+            <option value="Specific">🟡 Specific</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Due Date *</label>
+        <input type="date" id="nt-due" class="form-control" min="{{ today }}">
+      </div>
+      <div id="nt-error" style="color:#991B1B;font-size:13px;margin-bottom:8px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeNewTask()">Cancel</button>
+      <button class="btn btn-gold" onclick="submitNewTask()">Create Task →</button>
+    </div>
+  </div>
+</div>
+
+<div id="pt-toast"></div>
+
+<script>
+/* ─── Assignee data ────────────────────────────────────────────────────────── */
+// Pre-load all employees for the modal (used to build assignee dropdown after team load)
+let allEmployees = [];
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('/api/partner/employees')
+    .then(r => r.json())
+    .then(d => { allEmployees = d; })
+    .catch(() => {});
+});
+
+function loadAssignees() {
+  const code = document.getElementById('nt-company').value;
+  const sel  = document.getElementById('nt-assignee');
+  if (!code) { sel.innerHTML = '<option value="">— Select company first —</option>'; return; }
+  sel.innerHTML = '<option value="">Loading…</option>';
+  fetch('/api/partner/team?company=' + encodeURIComponent(code))
+    .then(r => r.json())
+    .then(d => {
+      const team = d.team || [];
+      // Exclude anchor rows (partner themselves)
+      const members = team.filter(m => m.member_emp_id !== m.partner_emp_id);
+      sel.innerHTML = '<option value="">— Select assignee —</option>';
+      if (members.length === 0) {
+        sel.innerHTML = '<option value="">No members assigned to this company</option>';
+        return;
+      }
+      members.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.member_emp_id;
+        o.textContent = m.member_name + ' (' + m.member_role + ')';
+        sel.appendChild(o);
+      });
+    })
+    .catch(() => { sel.innerHTML = '<option value="">Error loading team</option>'; });
+}
+
+/* ─── Modal ──────────────────────────────────────────────────────────────── */
+function openNewTask() {
+  document.getElementById('nt-company').value = '';
+  document.getElementById('nt-title').value   = '';
+  document.getElementById('nt-desc').value    = '';
+  document.getElementById('nt-assignee').innerHTML = '<option value="">— Select company first —</option>';
+  document.getElementById('nt-type').value    = 'Regular';
+  document.getElementById('nt-due').value     = '';
+  document.getElementById('nt-error').style.display = 'none';
+  document.getElementById('new-task-overlay').classList.add('open');
+}
+function closeNewTask() {
+  document.getElementById('new-task-overlay').classList.remove('open');
+}
+function overlayClick(e) {
+  if (e.target === document.getElementById('new-task-overlay')) closeNewTask();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNewTask(); });
+
+function submitNewTask() {
+  const errEl = document.getElementById('nt-error');
+  const code     = document.getElementById('nt-company').value;
+  const title    = document.getElementById('nt-title').value.trim();
+  const desc     = document.getElementById('nt-desc').value.trim();
+  const assignee = document.getElementById('nt-assignee').value;
+  const taskType = document.getElementById('nt-type').value;
+  const due      = document.getElementById('nt-due').value;
+
+  if (!code || !title || !assignee || !due) {
+    errEl.textContent = 'Please fill in all required fields.';
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+
+  fetch('/api/tasks/create', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({company_code: code, title, description: desc,
+                          assigned_to_emp_id: assignee, due_date: due,
+                          task_type: taskType})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      showToast('✓ Task created!');
+      closeNewTask();
+      setTimeout(() => location.reload(), 800);
+    } else {
+      errEl.textContent = d.error || 'Error creating task.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(() => { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; });
+}
+
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('pt-toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3000);
+}
+</script>
+{% endblock %}

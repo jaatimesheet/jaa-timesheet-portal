@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+{% block title %}Company Assignments — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page header ─────────────────────────────────────────────────────────── */
+.pa-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+}
+.pa-topbar h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px; color: var(--navy); margin: 0;
+}
+.branch-badge {
+  background: rgba(13,33,55,.08); color: var(--navy);
+  border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 600;
+}
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.pa-kpi-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px; margin-bottom: 28px;
+}
+.pa-kpi {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+  position: relative; overflow: hidden;
+}
+.pa-kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kpi-color, var(--teal));
+}
+.pa-kpi .kv {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; color: var(--kpi-color, var(--navy));
+  line-height: 1;
+}
+.pa-kpi .kl {
+  font-size: 12px; color: var(--text-light);
+  font-weight: 500; margin-top: 4px; letter-spacing: .3px;
+}
+
+/* ── Section header ──────────────────────────────────────────────────────── */
+.section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 10px;
+}
+.section-hdr-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.section-hdr h3 {
+  font-size: 15px; font-weight: 700; color: var(--navy); margin: 0;
+}
+.section-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; border-radius: 11px;
+  font-size: 12px; font-weight: 700; padding: 0 6px;
+}
+.sb-active   { background: rgba(201,168,76,.2); color: #78350F; }
+.sb-inactive { background: var(--surface); color: var(--text-light); }
+
+/* ── Search ──────────────────────────────────────────────────────────────── */
+.search-wrap { position: relative; }
+.search-wrap input {
+  padding: 7px 12px 7px 32px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
+  background: #fff; outline: none; transition: border-color .15s;
+  width: 200px;
+}
+.search-wrap input:focus { border-color: var(--teal); }
+.search-wrap::before {
+  content: '🔍'; position: absolute; left: 9px; top: 50%;
+  transform: translateY(-50%); font-size: 13px; pointer-events: none;
+}
+
+/* ── Cards grid ──────────────────────────────────────────────────────────── */
+.co-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px; margin-bottom: 36px;
+}
+.co-card {
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+  cursor: pointer; transition: border-color .17s, box-shadow .17s, transform .15s;
+  position: relative; overflow: hidden;
+}
+.co-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--teal); opacity: 0; transition: opacity .17s;
+}
+.co-card:hover {
+  border-color: var(--teal);
+  box-shadow: 0 6px 24px rgba(14,165,194,.13);
+  transform: translateY(-2px);
+}
+.co-card:hover::after { opacity: 1; }
+
+/* Active card — gold accent */
+.co-card.is-active { border-color: rgba(201,168,76,.45); }
+.co-card.is-active::after { background: var(--gold); opacity: 1; }
+.co-card.is-active:hover { border-color: var(--gold); box-shadow: 0 6px 24px rgba(201,168,76,.18); }
+
+.co-code {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+  color: var(--gold-lt); font-size: 10px; font-weight: 700;
+  letter-spacing: 1.2px; padding: 2px 8px; border-radius: 4px;
+  margin-bottom: 8px; text-transform: uppercase;
+}
+.co-name {
+  font-size: 14px; font-weight: 700; color: var(--navy);
+  margin-bottom: 12px; line-height: 1.35;
+}
+
+/* Member chips row */
+.member-chips {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px;
+}
+.m-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px 9px;
+  font-size: 11.5px; font-weight: 500; color: var(--text-mid);
+}
+.m-chip.role-intern  { background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8; }
+.m-chip.role-associate { background: rgba(201,168,76,.12); border-color: rgba(201,168,76,.35); color: #78350F; }
+.m-chip.role-employee  { background: #F0FDF4; border-color: #BBF7D0; color: #15803D; }
+.m-chip.role-partner   { background: rgba(13,33,55,.08); border-color: rgba(13,33,55,.2); color: var(--navy); }
+.m-chip .chip-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; opacity: .6; flex-shrink: 0;
+}
+.more-chip {
+  background: var(--surface); border: 1px dashed var(--border);
+  border-radius: 20px; padding: 2px 9px;
+  font-size: 11px; color: var(--text-light);
+}
+
+.co-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.manage-lnk {
+  font-size: 12px; font-weight: 700; color: var(--teal);
+  display: flex; align-items: center; gap: 3px;
+}
+.member-count-badge {
+  font-size: 11.5px; font-weight: 600;
+  padding: 2px 9px; border-radius: 20px;
+}
+.mcb-active   { background: rgba(201,168,76,.15); color: #78350F; }
+.mcb-inactive { background: var(--surface); color: var(--text-light); }
+
+/* Unmanaged section dimmed */
+.co-card.is-unmanaged { opacity: .75; }
+.co-card.is-unmanaged:hover { opacity: 1; }
+
+.co-card-hidden { display: none !important; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.modal.co-modal { width: 660px; max-width: 96vw; }
+.co-modal .modal-header {
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+  border-radius: 16px 16px 0 0; border-bottom: none; padding: 18px 24px;
+}
+.co-modal .modal-title { color: #fff; font-size: 18px; }
+.co-modal .modal-close { background: rgba(255,255,255,.12); color: #fff; }
+.co-modal .modal-close:hover { background: rgba(255,255,255,.22); color: #fff; }
+.modal-co-sub { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+
+/* Tree inside modal */
+.tree-section { margin-bottom: 18px; }
+.tree-lbl {
+  font-size: 10.5px; font-weight: 700; color: var(--text-light);
+  letter-spacing: .9px; text-transform: uppercase;
+  margin-bottom: 7px; padding-left: 2px;
+}
+.tree-node {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-sm);
+  border: 1px solid var(--border); margin-bottom: 6px; background: #fff;
+}
+.tree-node.lv0 {
+  background: linear-gradient(135deg,var(--navy),var(--navy-mid));
+  border-color: transparent;
+}
+.tree-node.lv0 .nd-name, .tree-node.lv0 .nd-role { color: #fff; }
+.tree-node.lv1 { margin-left: 26px; border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.05); }
+.tree-node.lv2 { margin-left: 52px; }
+.nd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot0 { background: var(--gold-lt); }
+.dot1 { background: var(--gold); }
+.dot2 { background: var(--teal); }
+.nd-info { flex: 1; min-width: 0; }
+.nd-name { font-size: 13.5px; font-weight: 600; color: var(--navy); }
+.nd-role { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.indent-guide {
+  margin-left: 38px; margin-bottom: 2px; font-size: 11px;
+  color: var(--text-light); display: flex; align-items: center; gap: 4px;
+}
+.indent-guide::before { content: '└'; opacity: .4; }
+.btn-rm {
+  padding: 3px 9px; border: none; border-radius: 6px;
+  background: #FEE2E2; color: #991B1B;
+  font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+}
+.btn-rm:hover { background: #FCA5A5; }
+
+/* Add member strip */
+.add-strip {
+  background: var(--surface); border: 1.5px dashed var(--border);
+  border-radius: var(--r-sm); padding: 15px 16px; margin-top: 6px;
+}
+.add-strip h4 {
+  font-size: 12.5px; font-weight: 700; color: var(--navy);
+  margin: 0 0 11px;
+}
+.add-row {
+  display: grid; grid-template-columns: 1fr 1fr auto;
+  gap: 8px; align-items: end;
+}
+@media(max-width:520px){ .add-row { grid-template-columns:1fr; } }
+.add-row .fl { display:flex; flex-direction:column; gap:4px; }
+.add-row .fl label { font-size:11px; font-weight:600; color:var(--text-mid); letter-spacing:.3px; }
+.add-row select {
+  padding: 8px 10px; border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); font-family: 'DM Sans',sans-serif;
+  font-size: 13px; background: #fff; outline: none; cursor: pointer;
+}
+.add-row select:focus { border-color: var(--teal); }
+.btn-add {
+  padding: 9px 16px; border: none; border-radius: var(--r-sm);
+  background: linear-gradient(135deg,var(--gold),var(--gold-lt));
+  color: var(--navy); font-family: 'DM Sans',sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.btn-add:hover { box-shadow: 0 4px 12px rgba(201,168,76,.35); transform: translateY(-1px); }
+
+/* Loading */
+.m-loading {
+  text-align: center; padding: 36px 20px; color: var(--text-light); font-size: 13px;
+}
+.spin {
+  display: inline-block; width: 22px; height: 22px;
+  border: 3px solid var(--border); border-top-color: var(--teal);
+  border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+#pa-toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  padding: 11px 18px; border-radius: var(--r-sm);
+  font-size: 13.5px; font-weight: 600;
+  background: var(--navy); color: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+#pa-toast.show { opacity: 1; }
+#pa-toast.ok  { background: #065F46; }
+#pa-toast.err { background: #991B1B; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+
+  <!-- Header -->
+  <div class="pa-topbar">
+    <div>
+      <h2>Company Assignments</h2>
+      <div style="font-size:13px;color:var(--text-light);margin-top:3px">
+        Click any card to manage its team
+      </div>
+    </div>
+    <span class="branch-badge">{{ session.get('branch_label','') }}</span>
+  </div>
+
+  <!-- KPI strip -->
+  {% set total   = active_cos|length + unmanaged_cos|length %}
+  <div class="pa-kpi-strip">
+    <div class="pa-kpi" style="--kpi-color:var(--gold)">
+      <div class="kv">{{ active_cos|length }}</div>
+      <div class="kl">Active Audits</div>
+    </div>
+    <div class="pa-kpi" style="--kpi-color:var(--text-light)">
+      <div class="kv">{{ unmanaged_cos|length }}</div>
+      <div class="kl">Unmanaged</div>
+    </div>
+    <div class="pa-kpi" style="--kpi-color:var(--teal)">
+      <div class="kv">{{ total }}</div>
+      <div class="kl">Total Companies</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: Active / Ongoing Audits ─────────────────────────────── -->
+  <div class="section-hdr">
+    <div class="section-hdr-left">
+      <h3>🟡 Active / Ongoing Audits</h3>
+      <span class="section-badge sb-active">{{ active_cos|length }}</span>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="search-active" placeholder="Filter…"
+             oninput="filterSection('active', this.value)">
+    </div>
+  </div>
+
+  <div class="co-grid" id="grid-active">
+    {% if active_cos %}
+      {% for co in active_cos %}
+      <div class="co-card is-active"
+           data-section="active"
+           data-code="{{ co.unique_code }}"
+           data-name="{{ co.full_name|lower }}"
+           data-short="{{ (co.short_code or '')|lower }}"
+           onclick="coOpenModal('{{ co.unique_code }}','{{ co.full_name|replace("'","\\'")|replace('"','\\"') }}','{{ co.short_code or co.unique_code }}')">
+        <div class="co-code">{{ co.short_code or co.unique_code }}</div>
+        <div class="co-name">{{ co.full_name }}</div>
+
+        <!-- Member chips — up to 4 shown, rest as +N -->
+        <div class="member-chips">
+          {% for m in co.members[:4] %}
+            <span class="m-chip role-{{ m.member_role|lower }}">
+              <span class="chip-dot"></span>
+              {{ m.member_name.split()[0] }}
+            </span>
+          {% endfor %}
+          {% if co.members|length > 4 %}
+            <span class="more-chip">+{{ co.members|length - 4 }} more</span>
+          {% endif %}
+        </div>
+
+        <div class="co-card-footer">
+          <span class="member-count-badge mcb-active">
+            {{ co.members|length }} member{{ 's' if co.members|length != 1 else '' }}
+          </span>
+          <span class="manage-lnk">Manage ›</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="grid-column:1/-1;padding:32px 0;text-align:center;color:var(--text-light);font-size:13.5px">
+        No active audits yet. Assign team members to companies below to get started.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── SECTION 2: Unmanaged Companies ─────────────────────────────────── -->
+  <div class="section-hdr">
+    <div class="section-hdr-left">
+      <h3>⚪ Unmanaged Companies</h3>
+      <span class="section-badge sb-inactive">{{ unmanaged_cos|length }}</span>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="search-unmanaged" placeholder="Filter…"
+             oninput="filterSection('unmanaged', this.value)">
+    </div>
+  </div>
+
+  <div class="co-grid" id="grid-unmanaged">
+    {% if unmanaged_cos %}
+      {% for co in unmanaged_cos %}
+      <div class="co-card is-unmanaged"
+           data-section="unmanaged"
+           data-name="{{ co.full_name|lower }}"
+           data-short="{{ (co.short_code or '')|lower }}"
+           onclick="coOpenModal('{{ co.unique_code }}','{{ co.full_name|replace("'","\\'")|replace('"','\\"') }}','{{ co.short_code or co.unique_code }}')">
+        <div class="co-code">{{ co.short_code or co.unique_code }}</div>
+        <div class="co-name">{{ co.full_name }}</div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:12px">
+          No team assigned
+        </div>
+        <div class="co-card-footer">
+          <span class="member-count-badge mcb-inactive">0 members</span>
+          <span class="manage-lnk" style="color:var(--text-light)">Assign →</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="grid-column:1/-1;padding:24px 0;text-align:center;color:var(--text-light);font-size:13px">
+        All companies have at least one member assigned. 🎉
+      </div>
+    {% endif %}
+  </div>
+
+</div><!-- /content-area -->
+
+
+<!-- ── Modal ─────────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="co-overlay" onclick="coOverlayClick(event)">
+  <div class="modal co-modal" id="co-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Company</div>
+        <div class="modal-co-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="coCloseModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="m-loading"><div class="spin"></div><div>Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="pa-toast"></div>
+
+<script>
+const PARTNER_EMP_ID = {{ partner_emp_id | tojson }};
+const PARTNER_NAME   = {{ partner_name   | tojson }};
+let currentCode  = null;
+let allEmployees = [];
+
+/* ── Boot ─────────────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('/api/partner/employees')
+    .then(r => r.json())
+    .then(d => { allEmployees = d; })
+    .catch(() => {});
+});
+
+/* ── Filter ───────────────────────────────────────────────────────────────── */
+function filterSection(section, q) {
+  const term  = q.trim().toLowerCase();
+  const cards = document.querySelectorAll(`[data-section="${section}"]`);
+  cards.forEach(c => {
+    const hit = !term || c.dataset.name.includes(term) || c.dataset.short.includes(term);
+    c.classList.toggle('co-card-hidden', !hit);
+  });
+}
+
+/* ── Modal open / close ───────────────────────────────────────────────────── */
+function coOpenModal(code, name, shortCode) {
+  currentCode = code;
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-sub').textContent   = shortCode;
+  document.getElementById('modal-body').innerHTML =
+    '<div class="m-loading"><div class="spin"></div><div>Loading team…</div></div>';
+  document.getElementById('co-overlay').classList.add('open');
+  loadTeam(code);
+}
+function coCloseModal() {
+  document.getElementById('co-overlay').classList.remove('open');
+  currentCode = null;
+}
+function coOverlayClick(e) {
+  if (e.target === document.getElementById('co-overlay')) coCloseModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') coCloseModal(); });
+
+/* ── Load & render team ───────────────────────────────────────────────────── */
+function loadTeam(code) {
+  fetch('/api/partner/team?company=' + encodeURIComponent(code))
+    .then(r => {
+      if (!r.ok) throw new Error('Server error: ' + r.status);
+      return r.json();
+    })
+    .then(d => {
+      if (d.error) throw new Error(d.error);
+      renderTeam(code, d.team || []);
+    })
+    .catch(err => {
+      document.getElementById('modal-body').innerHTML =
+        '<p style="color:#991B1B;padding:20px 0">Failed to load team: ' + err.message + '</p>';
+    });
+}
+
+function refreshCard(code, team) {
+  /* Update the company card on the main page after team changes */
+  const card = document.querySelector('.co-card[data-code="' + code + '"]');
+  if (!card) return;
+  // Update member count badge
+  const badge = card.querySelector('.member-count-badge');
+  // Exclude the partner anchor row from display count
+  const displayTeam = team.filter(m => m.member_emp_id !== m.partner_emp_id);
+  const count = displayTeam.length;
+  if (badge) badge.textContent = count + (count === 1 ? ' member' : ' members');
+  // Update chips
+  const chipsEl = card.querySelector('.member-chips');
+  if (chipsEl) {
+    const shown = displayTeam.slice(0, 4);
+    let chipsHtml = shown.map(m =>
+      '<span class="m-chip role-' + (m.member_role||'').toLowerCase() + '">' +
+      '<span class="chip-dot"></span>' +
+      (m.member_name||'').split(' ')[0] + '</span>'
+    ).join('');
+    if (displayTeam.length > 4)
+      chipsHtml += '<span class="more-chip">+' + (displayTeam.length - 4) + ' more</span>';
+    chipsEl.innerHTML = chipsHtml;
+  }
+}
+
+function renderTeam(code, team) {
+  refreshCard(code, team);
+
+  const partners   = team.filter(m => m.member_emp_id === m.partner_emp_id);
+  const associates = team.filter(m =>
+    m.member_emp_id !== m.partner_emp_id && m.member_role === 'Associate'
+  );
+  const employees = team.filter(m =>
+    m.member_emp_id !== m.partner_emp_id && m.member_role === 'Employee'
+  );
+  // Direct Interns/others to Partner (not via Associate or Employee)
+  const directs = team.filter(m =>
+    m.member_emp_id !== m.partner_emp_id &&
+    m.member_role !== 'Associate' && m.member_role !== 'Employee' &&
+    (!m.reports_to_emp_id || m.reports_to_emp_id === m.partner_emp_id)
+  );
+  // Sub-members (report to someone other than the partner anchor)
+  const subs = team.filter(m =>
+    m.member_emp_id !== m.partner_emp_id &&
+    m.member_role !== 'Associate' && m.member_role !== 'Employee' &&
+    m.reports_to_emp_id && m.reports_to_emp_id !== m.partner_emp_id
+  );
+
+  let h = '';
+
+  // Partners
+  if (partners.length) {
+    h += '<div class="tree-section"><div class="tree-lbl">Partners on this account</div>';
+    partners.forEach(p => {
+      h += `<div class="tree-node lv0"><div class="nd-dot dot0"></div>
+        <div class="nd-info"><div class="nd-name">${x(p.partner_name)}</div>
+        <div class="nd-role">Partner</div></div></div>`;
+    });
+    h += '</div>';
+  }
+
+  // Associates with their sub-trees
+  if (associates.length) {
+    h += '<div class="tree-section"><div class="tree-lbl">Associates</div>';
+    associates.forEach(a => {
+      h += `<div class="tree-node lv1"><div class="nd-dot dot1"></div>
+        <div class="nd-info"><div class="nd-name">${x(a.member_name)}</div>
+        <div class="nd-role">${x(a.member_role)}</div></div>
+        <button class="btn-rm" onclick="removeMember(${a.id},'${x(a.member_name)}')">Remove</button>
+      </div>`;
+      // Employees under this Associate (Structure B)
+      employees.filter(e => e.reports_to_emp_id === a.member_emp_id).forEach(e => {
+        h += `<div class="indent-guide" style="margin-left:42px">via ${x(a.member_name)}</div>
+        <div class="tree-node lv2"><div class="nd-dot" style="background:#8B5CF6"></div>
+          <div class="nd-info"><div class="nd-name">${x(e.member_name)}</div>
+          <div class="nd-role">${x(e.member_role)}</div></div>
+          <button class="btn-rm" onclick="removeMember(${e.id},'${x(e.member_name)}')">Remove</button>
+        </div>`;
+        // Interns under this Employee
+        subs.filter(s => s.reports_to_emp_id === e.member_emp_id).forEach(s => {
+          h += `<div class="indent-guide" style="margin-left:68px">via ${x(e.member_name)}</div>
+          <div class="tree-node" style="margin-left:68px"><div class="nd-dot dot2"></div>
+            <div class="nd-info"><div class="nd-name">${x(s.member_name)}</div>
+            <div class="nd-role">${x(s.member_role)}</div></div>
+            <button class="btn-rm" onclick="removeMember(${s.id},'${x(s.member_name)}')">Remove</button>
+          </div>`;
+        });
+      });
+      // Interns/others directly under Associate (Structure A)
+      subs.filter(s => s.reports_to_emp_id === a.member_emp_id).forEach(s => {
+        h += `<div class="indent-guide" style="margin-left:42px">via ${x(a.member_name)}</div>
+        <div class="tree-node lv2"><div class="nd-dot dot2"></div>
+          <div class="nd-info"><div class="nd-name">${x(s.member_name)}</div>
+          <div class="nd-role">${x(s.member_role)}</div></div>
+          <button class="btn-rm" onclick="removeMember(${s.id},'${x(s.member_name)}')">Remove</button>
+        </div>`;
+      });
+    });
+    h += '</div>';
+  }
+
+  // Employees reporting directly to Partner
+  const empsDirectToPartner = employees.filter(e =>
+    !e.reports_to_emp_id || e.reports_to_emp_id === e.partner_emp_id
+  );
+  if (empsDirectToPartner.length) {
+    h += '<div class="tree-section"><div class="tree-lbl">Employees (direct)</div>';
+    empsDirectToPartner.forEach(e => {
+      h += `<div class="tree-node lv1"><div class="nd-dot" style="background:#8B5CF6"></div>
+        <div class="nd-info"><div class="nd-name">${x(e.member_name)}</div>
+        <div class="nd-role">${x(e.member_role)}</div></div>
+        <button class="btn-rm" onclick="removeMember(${e.id},'${x(e.member_name)}')">Remove</button>
+      </div>`;
+      subs.filter(s => s.reports_to_emp_id === e.member_emp_id).forEach(s => {
+        h += `<div class="indent-guide" style="margin-left:42px">via ${x(e.member_name)}</div>
+        <div class="tree-node lv2"><div class="nd-dot dot2"></div>
+          <div class="nd-info"><div class="nd-name">${x(s.member_name)}</div>
+          <div class="nd-role">${x(s.member_role)}</div></div>
+          <button class="btn-rm" onclick="removeMember(${s.id},'${x(s.member_name)}')">Remove</button>
+        </div>`;
+      });
+    });
+    h += '</div>';
+  }
+
+  // Direct Interns reporting straight to Partner
+  if (directs.length) {
+    h += '<div class="tree-section"><div class="tree-lbl">Direct team members</div>';
+    directs.forEach(d => {
+      h += `<div class="tree-node lv1"><div class="nd-dot dot2"></div>
+        <div class="nd-info"><div class="nd-name">${x(d.member_name)}</div>
+        <div class="nd-role">${x(d.member_role)}</div></div>
+        <button class="btn-rm" onclick="removeMember(${d.id},'${x(d.member_name)}')">Remove</button>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  if (!partners.length && !associates.length && !employees.length && !directs.length) {
+    h += `<div style="text-align:center;padding:24px 0;color:var(--text-light)">
+      <div style="font-size:30px;margin-bottom:8px">&#128101;</div>
+      <div style="font-size:13.5px">No team members yet &#8212; add one below.</div></div>`;
+  }
+
+  const memberOpts    = buildMemberOpts(team);
+  const reportsToOpts = buildReportsToOpts(team);
+  h += `<div class="add-strip"><h4>&#10133; Add Team Member</h4>
+    <div class="add-row">
+      <div class="fl"><label>Employee</label><select id="m-emp">${memberOpts}</select></div>
+      <div class="fl"><label>Reports To</label><select id="m-rep">${reportsToOpts}</select></div>
+      <button class="btn-add" onclick="addMember()">Add &#8594;</button>
+    </div></div>`;
+
+  document.getElementById('modal-body').innerHTML = h;
+}
+
+function buildMemberOpts(team) {
+  const assigned = new Set(team.map(m => m.member_emp_id));
+  let o = '<option value="">— Select employee —</option>';
+  allEmployees.forEach(e => {
+    if (!assigned.has(e.emp_id)) {
+      o += `<option value="${x(e.emp_id)}">${x(e.full_name)} (${x(e.role)})</option>`;
+    }
+  });
+  return o;
+}
+function buildReportsToOpts(team) {
+  let o = `<option value="${x(PARTNER_EMP_ID)}">Partner — ${x(PARTNER_NAME)}</option>`;
+  // Associates as middle layer
+  team.filter(m => m.member_role === 'Associate' && m.member_emp_id !== m.partner_emp_id)
+    .forEach(a => {
+      o += `<option value="${x(a.member_emp_id)}">via ${x(a.member_name)} (Associate)</option>`;
+    });
+  // Employees as middle layer (Structure B: Partner → Associate → Employee → Intern)
+  team.filter(m => m.member_role === 'Employee' && m.member_emp_id !== m.partner_emp_id)
+    .forEach(e => {
+      o += `<option value="${x(e.member_emp_id)}">via ${x(e.member_name)} (Employee)</option>`;
+    });
+  return o;
+}
+
+/* ── Add / Remove ─────────────────────────────────────────────────────────── */
+function addMember() {
+  const empSel = document.getElementById('m-emp');
+  const repSel = document.getElementById('m-rep');
+  if (!empSel.value) { showToast('Please select an employee', 'err'); return; }
+  const addBtn = document.querySelector('.btn-add');
+  if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Adding…'; }
+  fetch('/api/partner/add-member', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      company_code:      currentCode,
+      member_emp_id:     empSel.value,
+      reports_to_emp_id: repSel ? repSel.value : PARTNER_EMP_ID
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      showToast('✓ Member added!');
+      // Use returned team directly — no second round-trip needed
+      if (d.team) {
+        renderTeam(currentCode, d.team);
+      } else {
+        loadTeam(currentCode);
+      }
+    } else {
+      showToast('✗ ' + (d.error || 'Error'), 'err');
+    }
+  });
+}
+
+function removeMember(id, name) {
+  if (!confirm('Remove ' + name + ' from this company?')) return;
+  fetch('/api/partner/remove-member', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({assignment_id: id})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      showToast('✓ Removed');
+      // Use returned team directly — no second round-trip needed
+      if (d.team) {
+        renderTeam(currentCode, d.team);
+      } else {
+        loadTeam(currentCode);
+      }
+    } else {
+      showToast('✗ ' + (d.error || 'Error'), 'err');
+    }
+  });
+}
+
+/* ── Util ─────────────────────────────────────────────────────────────────── */
+function x(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('pa-toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3000);
+}
+</script>
+{% endblock %}

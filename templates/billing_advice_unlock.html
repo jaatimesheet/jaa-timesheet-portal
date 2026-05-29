@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Billing Advice — Enter Password{% endblock %}
+
+{% block extra_head %}
+<style>
+.unlock-wrap {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.unlock-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 40px 36px 36px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(27,42,74,.10);
+  text-align: center;
+}
+.unlock-icon {
+  font-size: 40px;
+  margin-bottom: 14px;
+}
+.unlock-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.unlock-sub {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 28px;
+}
+.unlock-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 15px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--navy);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+  letter-spacing: 3px;
+  text-align: center;
+}
+.unlock-input:focus { border-color: var(--teal); }
+.unlock-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 14px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.unlock-btn:hover { opacity: .85; }
+.unlock-error {
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #991B1B;
+  margin-bottom: 16px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="unlock-wrap">
+  <div class="unlock-card">
+    <div class="unlock-icon">🔐</div>
+    <div class="unlock-title">Billing Advice</div>
+    <div class="unlock-sub">This section is password protected.<br>Enter the password to continue.</div>
+
+    {% if error %}
+    <div class="unlock-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <input
+        type="password"
+        name="pin"
+        class="unlock-input"
+        placeholder="Enter password"
+        autofocus
+        autocomplete="off"
+      >
+      <button type="submit" class="unlock-btn">Unlock →</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

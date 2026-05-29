@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Tasks — Admin View — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.at-kpis { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px }
+.at-kpi  { background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden }
+.at-kpi::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--teal)) }
+.at-kpi .kv { font-family:'DM Serif Display',serif;font-size:28px;line-height:1;color:var(--kc,var(--navy)) }
+.at-kpi .kl { font-size:11.5px;color:var(--text-light);font-weight:500;margin-top:4px;letter-spacing:.3px }
+
+.type-badge     { display:inline-flex;align-items:center;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.3px }
+.type-regular   { background:#F3F4F6;color:#6B7280 }
+.type-emergency { background:#FEE2E2;color:#991B1B }
+.type-specific  { background:#FEF3C7;color:#92400E }
+
+.sbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700 }
+.s-pending    { color:#78350F;background:#FEF3C7 }
+.s-inprogress { color:#1D4ED8;background:#EFF6FF }
+.s-done       { color:#065F46;background:#D1FAE5 }
+.overdue-badge { display:inline-flex;align-items:center;background:#FEE2E2;color:#991B1B;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700 }
+
+.at-table { width:100%;border-collapse:collapse;font-size:13px }
+.at-table th {
+  text-align:left;padding:10px 14px;font-size:11px;font-weight:700;
+  color:var(--text-light);letter-spacing:.6px;text-transform:uppercase;
+  background:var(--surface);border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+.at-table td {
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  color:var(--text);vertical-align:middle;
+}
+.at-table tr:last-child td { border-bottom:none }
+.at-table tr.is-overdue td { background:#FFF5F5 }
+.at-table tr.is-overdue td:first-child { border-left:3px solid #DC2626 }
+.at-table tr:hover td { background:var(--surface) }
+.at-table tr.is-overdue:hover td { background:#FEE2E2 }
+
+.read-only-note {
+  display:flex;align-items:center;gap:8px;
+  background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--r-sm);
+  padding:10px 14px;font-size:13px;color:#78350F;margin-bottom:18px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Tasks</span>
+  <span class="topbar-sub">Read-only view</span>
+</div>
+
+<div class="page-content">
+
+  <div class="read-only-note">
+    👁 Admin view is read-only. Task creation and status updates are done by Partners and team members.
+  </div>
+
+  <!-- KPIs -->
+  {% set total   = tasks | length %}
+  {% set pending = tasks | selectattr('status','equalto','Pending') | list | length %}
+  {% set inprog  = tasks | selectattr('status','equalto','In Progress') | list | length %}
+  {% set overdue = tasks | selectattr('due_date','lt',today) | rejectattr('status','equalto','Done') | list | length %}
+  <div class="at-kpis">
+    <div class="at-kpi" style="--kc:var(--teal)">
+      <div class="kv">{{ total }}</div><div class="kl">Total Tasks</div>
+    </div>
+    <div class="at-kpi" style="--kc:var(--gold)">
+      <div class="kv">{{ pending }}</div><div class="kl">Pending</div>
+    </div>
+    <div class="at-kpi" style="--kc:#3B82F6">
+      <div class="kv">{{ inprog }}</div><div class="kl">In Progress</div>
+    </div>
+    <div class="at-kpi" style="--kc:#DC2626">
+      <div class="kv">{{ overdue }}</div><div class="kl">Overdue</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 All Tasks</span>
+      <span style="font-size:12px;color:var(--text-light)">{{ total }} task{{ 's' if total!=1 else '' }}</span>
+    </div>
+    {% if tasks %}
+    <div class="table-wrap">
+      <table class="at-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Company</th>
+            <th>Assigned By</th>
+            <th>Assigned To</th>
+            <th>Role</th>
+            <th>Due Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tasks %}
+          {% set is_over = t.due_date < today and t.status != 'Done' %}
+          {% set sc = 's-done' if t.status=='Done' else ('s-inprogress' if t.status=='In Progress' else 's-pending') %}
+          {% set tt = t.get('task_type','Regular') %}
+          {% set tc = 'type-emergency' if tt=='Emergency' else ('type-specific' if tt=='Specific' else 'type-regular') %}
+          <tr class="{% if is_over %}is-overdue{% endif %}">
+            <td>
+              <div style="font-weight:600">{{ t.title }}</div>
+              {% if t.description %}
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px">{{ t.description[:80] }}{% if t.description|length > 80 %}…{% endif %}</div>
+              {% endif %}
+              {% if is_over %}<span class="overdue-badge" style="margin-top:4px;display:inline-flex">⚠ Overdue</span>{% endif %}
+            </td>
+            <td><span class="type-badge {{ tc }}">{{ tt }}</span></td>
+            <td style="color:var(--text-mid)">{{ t.company_name }}</td>
+            <td>{{ t.assigned_by_name }}</td>
+            <td style="font-weight:600">{{ t.assigned_to_name }}</td>
+            <td><span class="badge badge-navy" style="font-size:11px">{{ t.assigned_to_role }}</span></td>
+            <td style="font-weight:{% if is_over %}700{% else %}400{% endif %};color:{% if is_over %}#DC2626{% else %}var(--text-mid){% endif %};white-space:nowrap">
+              {{ t.due_date }}
+            </td>
+            <td><span class="sbadge {{ sc }}">{{ t.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:48px 20px;color:var(--text-light)">
+      <div style="font-size:36px;margin-bottom:10px">📋</div>
+      <div>No tasks have been created yet.</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /page-content -->
+{% endblock %}

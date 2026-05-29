@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Bill Register {{ fy }} — JAA Partner{% endblock %}
+
+{% block extra_head %}
+<style>
+.br-wrap { max-width:1100px;margin:0 auto;padding:28px 20px 80px }
+
+.br-header {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px
+}
+.br-header h2 {
+  font-family:'DM Serif Display',serif;font-size:21px;color:var(--navy);margin:0
+}
+.br-meta { font-size:13px;color:var(--text-light);margin-top:3px }
+
+.btn-br {
+  padding:9px 18px;border-radius:var(--r-sm);border:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:opacity .15s;text-decoration:none
+}
+.btn-br:hover { opacity:.85 }
+.btn-br-gold    { background:var(--gold);color:var(--navy) }
+.btn-br-outline {
+  background:#fff;color:var(--navy);
+  border:1.5px solid var(--border)!important
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+.br-table-wrap {
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+  overflow:auto
+}
+.br-table {
+  width:100%;border-collapse:collapse;font-size:12.5px;
+  font-family:'DM Sans',sans-serif
+}
+.br-table th {
+  background:var(--navy);color:#fff;font-weight:700;font-size:11.5px;
+  padding:10px 10px;text-align:center;white-space:nowrap;
+  border:1px solid #2d4a7a;position:sticky;top:0;z-index:2
+}
+.br-table td {
+  padding:9px 10px;border:1px solid var(--border);
+  vertical-align:top;color:var(--navy)
+}
+.br-table tr:nth-child(even) td { background:#F9FAFB }
+.br-table tr:hover td { background:#EFF6FF }
+
+.td-num  { text-align:right;font-variant-numeric:tabular-nums }
+.td-sr   { text-align:center;color:var(--text-mid);font-size:12px }
+.td-inv  { font-weight:700;white-space:nowrap }
+.td-date { white-space:nowrap;color:var(--text-mid) }
+.td-desc { font-size:12px;color:var(--text-mid);max-width:280px }
+
+/* grand total row */
+.br-grand td {
+  background:var(--navy)!important;color:#fff!important;
+  font-weight:700;border-color:#2d4a7a!important
+}
+.br-grand .td-num { color:#fff!important }
+
+/* empty state */
+.br-empty {
+  text-align:center;padding:60px 20px;
+  background:#fff;border:1px solid var(--border);border-radius:var(--r)
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Bill Register</span>
+  <span class="topbar-sub">{{ branch_label }} · FY {{ fy }}</span>
+</div>
+
+<div class="br-wrap">
+  <div class="br-header">
+    <div>
+      <h2>📋 Bill Register — FY {{ fy }}</h2>
+      <div class="br-meta">Joshi Apte and Associates · {{ branch_label }} · Finalized bills only</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="/partner/billing-advice/export?fy={{ fy }}" class="btn-br btn-br-gold">
+        ⬇ Download Excel
+      </a>
+      <a href="/partner/finance-controls" class="btn-br btn-br-outline">
+        ← Back
+      </a>
+    </div>
+  </div>
+
+  {% if not table_rows %}
+  <div class="br-empty">
+    <div style="font-size:36px;margin-bottom:12px">📭</div>
+    <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px">No finalized bills for FY {{ fy }}</div>
+    <div style="font-size:13px;color:var(--text-light)">Bills appear here once they are finalized.</div>
+  </div>
+  {% else %}
+  <div class="br-table-wrap">
+    <table class="br-table">
+      <thead>
+        <tr>
+          <th style="width:44px">Sr.</th>
+          <th>Bill No</th>
+          <th>Date</th>
+          <th style="min-width:180px">Party Name</th>
+          <th style="min-width:200px">Particulars</th>
+          <th>Fees (₹)</th>
+          <th>OOP (₹)</th>
+          <th>CGST (₹)</th>
+          <th>SGST (₹)</th>
+          <th>IGST (₹)</th>
+          <th>Total (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in table_rows %}
+        <tr>
+          <td class="td-sr">{{ r.sr }}</td>
+          <td class="td-inv">{{ r.invoice_no }}</td>
+          <td class="td-date">{{ r.date }}</td>
+          <td>{{ r.firm_name }}</td>
+          <td class="td-desc">{{ r.service_desc }}</td>
+          <td class="td-num">{{ "%.2f"|format(r.fee) }}</td>
+          <td class="td-num">{{ "%.2f"|format(r.oop) }}</td>
+          <td class="td-num">{{ "%.2f"|format(r.cgst) }}</td>
+          <td class="td-num">{{ "%.2f"|format(r.sgst) }}</td>
+          <td class="td-num">{{ "%.2f"|format(r.igst) }}</td>
+          <td class="td-num" style="font-weight:700">{{ "%.2f"|format(r.total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="br-grand">
+          <td colspan="5" style="text-align:right;letter-spacing:.3px">Grand Total</td>
+          <td class="td-num">{{ "%.2f"|format(grand.fee) }}</td>
+          <td class="td-num">{{ "%.2f"|format(grand.oop) }}</td>
+          <td class="td-num">{{ "%.2f"|format(grand.cgst) }}</td>
+          <td class="td-num">{{ "%.2f"|format(grand.sgst) }}</td>
+          <td class="td-num">{{ "%.2f"|format(grand.igst) }}</td>
+          <td class="td-num">{{ "%.2f"|format(grand.total) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:var(--text-light);text-align:right">
+    {{ table_rows|length }} bill{{ 's' if table_rows|length != 1 else '' }} · Grand Total ₹{{ "{:,.2f}".format(grand.total) }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

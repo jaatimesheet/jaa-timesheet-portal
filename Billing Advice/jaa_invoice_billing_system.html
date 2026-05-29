@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAA Billing System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:      #0d2647;
+    --navy2:     #0b1f3a;
+    --navy3:     #162d52;
+    --gold:      #c9a84c;
+    --gold-dim:  #a8863c;
+    --teal:      #2dd4bf;
+    --teal-dark: #0ea5a0;
+    --teal-bg:   rgba(45,212,191,0.09);
+    --bg:        #f0f4f8;
+    --white:     #ffffff;
+    --border:    #dde3eb;
+    --border2:   #c8d2de;
+    --text:      #1a2744;
+    --text2:     #5a6a80;
+    --text3:     #8a99b0;
+    --label:     #6b7a94;
+    --green:     #10b981;
+    --red:       #ef4444;
+    --amber:     #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--navy); height: 56px;
+    display: flex; align-items: stretch; padding: 0 32px;
+    position: sticky; top: 0; z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .header-brand { display: flex; align-items: center; gap: 11px; padding-right: 24px; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+  .brand-mark { width: 32px; height: 32px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 12px; font-weight: 700; color: var(--navy); letter-spacing: 0.3px; }
+  .brand-name { font-family: 'DM Serif Display', serif; font-size: 16px; color: #fff; }
+  .brand-name span { color: var(--gold); }
+  .brand-sub { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+  .tab-bar { display: flex; align-items: stretch; margin-left: 8px; flex: 1; }
+  .tab-btn { display: flex; align-items: center; gap: 8px; padding: 0 20px; background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; color: rgba(255,255,255,0.45); border-bottom: 2px solid transparent; transition: color 0.18s; white-space: nowrap; }
+  .tab-btn:hover { color: rgba(255,255,255,0.8); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-pip { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); flex-shrink: 0; }
+  .tab-btn.active .tab-pip { background: var(--gold); }
+  .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 16px; }
+  .hdr-btn { padding: 6px 13px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .hdr-btn-clients { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+  .hdr-btn-clients:hover { background: rgba(201,168,76,0.25); }
+
+  /* ── PANELS ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .container { max-width: 660px; margin: 0 auto; padding: 28px 20px 72px; }
+
+  /* ── SECTION HEADS ── */
+  .sh { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; }
+  .sh:first-child { margin-top: 0; }
+  .sh-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .sh-title { font-family: 'DM Serif Display', serif; font-size: 14px; color: var(--navy); }
+  .sh-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* ── FIELD GROUP ── */
+  .fg { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(13,38,71,0.06); }
+  .f { padding: 11px 15px; border-bottom: 1px solid var(--border); position: relative; }
+  .f:last-child { border-bottom: none; }
+  .f label { display: block; font-size: 10px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .f input, .f select, .f textarea { width: 100%; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: var(--text); padding: 0; }
+  .f input::placeholder, .f textarea::placeholder { color: var(--text3); }
+  .f select { cursor: pointer; }
+  .f select option { background: #fff; color: var(--text); }
+  .f textarea { resize: vertical; min-height: 52px; line-height: 1.55; }
+  .f input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.4; cursor: pointer; }
+  .r2 { display: grid; grid-template-columns: 1fr 1fr; }
+  .r3 { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .r2 .f:not(:last-child), .r3 .f:not(:last-child) { border-right: 1px solid var(--border); }
+
+  /* ── CLIENT AUTOCOMPLETE ── */
+  .ac-wrap { position: relative; }
+  .ac-row { display: flex; align-items: center; gap: 0; }
+  .ac-row input { flex: 1; }
+  .ac-saved-badge { font-size: 10.5px; font-weight: 600; color: var(--green); background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 10px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; display: none; }
+  .ac-dropdown {
+    position: absolute; top: calc(100% + 2px); left: -15px; right: -15px;
+    background: var(--white); border: 1px solid var(--border2); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(13,38,71,0.13); z-index: 100; overflow: hidden; display: none;
+  }
+  .ac-dropdown.open { display: block; }
+  .ac-item { padding: 9px 13px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.selected { background: var(--bg); }
+  .ac-item .ai-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .ac-item .ai-gstin { font-size: 11px; color: var(--text2); font-family: monospace; margin-top: 1px; }
+  .ac-new { padding: 9px 13px; cursor: pointer; font-size: 12.5px; color: var(--teal-dark); font-weight: 600; background: var(--teal-bg); display: flex; align-items: center; gap: 6px; }
+  .ac-new:hover { background: rgba(45,212,191,0.15); }
+  .ac-empty { padding: 10px 13px; font-size: 12.5px; color: var(--text3); text-align: center; }
+
+  /* ── GSTIN FIELD with save prompt ── */
+  .gstin-row { display: flex; align-items: center; gap: 8px; }
+  .gstin-row input { flex: 1; }
+  .gstin-save-btn { padding: 4px 11px; border-radius: 6px; background: var(--navy); color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; white-space: nowrap; flex-shrink: 0; display: none; transition: background 0.15s; }
+  .gstin-save-btn:hover { background: var(--navy3); }
+
+  /* ── TOGGLES ── */
+  .tg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+  .tg label { padding: 5px 13px; border: 1.5px solid var(--border2); border-radius: 20px; cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--text2); transition: all 0.15s; text-transform: none; letter-spacing: 0; margin-bottom: 0; }
+  .tg input[type="radio"] { display: none; }
+  .tg label:has(input:checked) { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 600; }
+  .tg.tc label:has(input:checked) { background: var(--teal-dark); border-color: var(--teal-dark); color: #fff; }
+
+  /* ── INVOICE NUMBER ── */
+  .inv-no-row { display: flex; align-items: center; gap: 8px; }
+  .inv-no-row input { flex: 1; }
+  .inv-no-tag { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; display: none; }
+  .inv-no-tag.ok   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .inv-no-tag.warn { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .inv-no-tag.err  { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+
+  /* ── GST STRIP ── */
+  .gst-strip { background: var(--navy); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px; text-align: center; }
+  .gc-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.45); margin-bottom: 4px; }
+  .gc-value { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--gold); }
+  .gc-sub   { font-size: 10.5px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  /* ── AMOUNT PANEL ── */
+  .amt-panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(13,38,71,0.06); }
+  .amt-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .amt-row:last-child { border-bottom: none; }
+  .amt-row .al { color: var(--text2); }
+  .amt-row .av { font-weight: 600; color: var(--text); }
+  .amt-row.gst-r .av { color: var(--teal-dark); }
+  .amt-row.tot-r { background: var(--navy); }
+  .amt-row.tot-r .al { font-family: 'DM Serif Display', serif; font-size: 14px; color: rgba(255,255,255,0.75); }
+  .amt-row.tot-r .av { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--gold); }
+  .filing-x { display: none; }
+
+  /* ── SYNC NOTICE ── */
+  .sync-notice { background: var(--teal-bg); border: 1px solid rgba(45,212,191,0.3); border-radius: 8px; padding: 9px 14px; font-size: 12px; color: var(--teal-dark); font-weight: 500; margin-bottom: 18px; }
+
+  /* ── STATUS BAR ── */
+  .status-bar { background: var(--white); border: 1px solid var(--border); border-radius: 10px; display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(13,38,71,0.06); }
+  .sc { padding: 11px 12px; border-right: 1px solid var(--border); text-align: center; }
+  .sc:last-child { border-right: none; }
+  .sc-l { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--label); font-weight: 700; margin-bottom: 3px; }
+  .sc-v { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sc-v.navy { color: var(--navy); }
+  .sc-v.teal { color: var(--teal-dark); font-family: 'DM Serif Display', serif; font-size: 15px; }
+
+  /* ── BUTTONS ── */
+  .actions { display: flex; gap: 9px; justify-content: flex-end; margin-top: 28px; flex-wrap: wrap; }
+  .btn { padding: 10px 22px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 13.5px; cursor: pointer; border: none; transition: all 0.15s; display: flex; align-items: center; gap: 7px; }
+  .btn-ghost { background: var(--white); color: var(--text2); border: 1.5px solid var(--border2); }
+  .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+  .btn-gold { background: var(--gold); color: var(--navy); font-weight: 700; }
+  .btn-gold:hover { background: #d4af5a; }
+  .btn-teal { background: var(--teal-dark); color: #fff; }
+  .btn-teal:hover { background: #0d9490; }
+  .btn-navy { background: var(--navy); color: #fff; }
+  .btn-navy:hover { background: var(--navy3); }
+  .btn-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+  .btn-red:hover { background: #fecaca; }
+
+  /* ── CLIENT MANAGER MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(11,31,58,0.55); z-index: 300; overflow-y: auto; padding: 28px 14px; backdrop-filter: blur(2px); }
+  .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+  .modal-box { background: var(--white); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 760px; overflow: hidden; box-shadow: 0 20px 60px rgba(11,31,58,0.25); }
+  .modal-bar { background: var(--navy); padding: 13px 20px; display: flex; align-items: center; gap: 9px; }
+  .modal-bar span { color: rgba(255,255,255,0.55); font-size: 13px; margin-right: auto; }
+
+  /* ── CLIENT MANAGER CONTENT ── */
+  .cm-body { padding: 20px; }
+  .cm-add { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 18px; align-items: end; }
+  .cm-field label { display: block; font-size: 10px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+  .cm-field input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border2); border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .cm-field input:focus { border-color: var(--navy); }
+  .cm-add-btn { padding: 9px 18px; background: var(--navy); color: #fff; border: none; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; height: fit-content; transition: background 0.15s; }
+  .cm-add-btn:hover { background: var(--navy3); }
+  .cm-search { margin-bottom: 12px; }
+  .cm-search input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; background: var(--bg); }
+  .cm-search input:focus { border-color: var(--navy); background: var(--white); }
+  .cm-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; max-height: 340px; overflow-y: auto; }
+  .cm-row { display: flex; align-items: center; padding: 10px 13px; border-bottom: 1px solid var(--border); gap: 10px; transition: background 0.12s; }
+  .cm-row:last-child { border-bottom: none; }
+  .cm-row:hover { background: var(--bg); }
+  .cm-row-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .cm-row-gstin { font-size: 11.5px; color: var(--text2); font-family: monospace; min-width: 150px; }
+  .cm-row-del { width: 26px; height: 26px; border-radius: 5px; background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.12s; }
+  .cm-row-del:hover { background: #fecaca; }
+  .cm-empty { padding: 24px; text-align: center; color: var(--text3); font-size: 13px; }
+  .cm-count { font-size: 11.5px; color: var(--text3); margin-bottom: 8px; }
+  .cm-tip { background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 7px; padding: 9px 13px; font-size: 12px; color: var(--gold-dim); margin-bottom: 16px; }
+  .cm-tip strong { color: var(--navy); }
+
+  /* ── PRINTED DOCS ── */
+  .inv-doc { padding: 44px; font-family: 'DM Sans', sans-serif; background: #fff; color: #1a2744; }
+  .inv-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 18px; border-bottom: 3px solid #0d2647; }
+  .inv-firm { font-family: 'DM Serif Display', serif; font-size: 24px; color: #0d2647; }
+  .inv-sub  { color: #6b7280; font-size: 12px; margin-top: 3px; }
+  .inv-badge .il { font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; }
+  .inv-badge .ino { font-family: 'DM Serif Display', serif; font-size: 19px; color: #c9a84c; }
+  .inv-badge .idt { font-size: 12px; color: #6b7280; margin-top: 2px; text-align: right; }
+  .inv-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .inv-party h4 { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #c9a84c; font-weight: 700; margin-bottom: 6px; }
+  .inv-party p  { font-size: 13px; color: #1a2744; line-height: 1.6; }
+  .inv-desc { background: #f9f8f5; border-radius: 7px; padding: 13px 16px; margin-bottom: 22px; }
+  .inv-desc h4 { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #c9a84c; font-weight: 700; margin-bottom: 5px; }
+  .inv-desc p  { font-size: 13px; color: #1a2744; line-height: 1.6; }
+  .inv-tbl { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+  .inv-tbl th { background: #0d2647; color: #fff; padding: 8px 12px; font-size: 11px; text-align: left; font-weight: 600; }
+  .inv-tbl th:last-child { text-align: right; }
+  .inv-tbl td { padding: 10px 12px; border-bottom: 1px solid #e8e5df; font-size: 13px; }
+  .inv-tbl td:last-child { text-align: right; font-weight: 500; }
+  .inv-tbl .sub-r td { background: #f3f4f6; font-weight: 600; }
+  .inv-tbl .gst-r td { color: #059669; }
+  .inv-tbl .tot-r td { background: #0d2647; color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Serif Display', serif; }
+  .inv-ftr { margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #e8e5df; display: flex; justify-content: space-between; align-items: flex-end; }
+  .inv-ftr .note { font-size: 11px; color: #6b7280; max-width: 260px; line-height: 1.5; }
+  .inv-ftr .sig  { text-align: right; }
+  .inv-ftr .sig p { font-size: 11px; color: #6b7280; }
+  .inv-ftr .sig strong { font-size: 13.5px; color: #0d2647; font-family: 'DM Serif Display', serif; }
+  .gtag { display: inline-block; background: #c9a84c; color: #0d2647; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: 4px; }
+  .ba-doc { padding: 42px 46px; font-family: 'DM Sans', sans-serif; background: #fff; color: #1a2744; }
+  .ba-hdr { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px double #0d2647; }
+  .ba-firm { font-family: 'DM Serif Display', serif; font-size: 20px; color: #0d2647; }
+  .ba-firm-sub { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
+  .ba-title { font-family: 'DM Serif Display', serif; font-size: 15px; color: #0d2647; text-transform: uppercase; letter-spacing: 2.5px; margin-top: 12px; }
+  .ba-ref   { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .ba-tbl   { width: 100%; border-collapse: collapse; }
+  .ba-tbl .ba-row { border-bottom: 1px solid #efefef; }
+  .ba-tbl .ba-row td { padding: 8px 6px; vertical-align: top; font-size: 12.5px; }
+  .ba-num { font-weight: 700; color: #0d2647; width: 22px; min-width: 22px; }
+  .ba-lbl { color: #6b7280; width: 190px; min-width: 190px; font-weight: 500; }
+  .ba-val { color: #1a2744; font-weight: 500; }
+  .mini-tbl td { padding: 2px 5px; font-size: 11.5px; }
+  .mini-tbl td:last-child { text-align: right; font-weight: 600; }
+  .mini-tot td { border-top: 1px solid #ddd; font-weight: 700; }
+  .badge-p { display: inline-block; padding: 1px 7px; border-radius: 12px; font-size: 10.5px; font-weight: 600; }
+  .bp-yes { background: #dcfce7; color: #15803d; }
+  .bp-no  { background: #fee2e2; color: #dc2626; }
+  .bp-jaa { background: #dbeafe; color: #1d4ed8; }
+  .bp-co  { background: #f3f4f6; color: #6b7280; }
+  .ba-admin { margin-top: 20px; background: #f9f8f5; border-radius: 7px; padding: 12px 16px; border-left: 3px solid #c9a84c; }
+  .ba-admin h5 { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #c9a84c; margin-bottom: 9px; }
+  .ba-admin-g { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; font-size: 12px; }
+  .ai-l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; font-weight: 600; margin-bottom: 1px; }
+  .ai-v { color: #1a2744; font-weight: 500; }
+  .ba-ftr { margin-top: 26px; padding-top: 16px; border-top: 1.5px solid #e8e5df; display: flex; justify-content: space-between; align-items: flex-end; }
+  .ba-ftr .note { font-size: 11px; color: #6b7280; max-width: 200px; line-height: 1.6; }
+  .ba-sig { text-align: right; }
+  .ba-sig p { font-size: 11px; color: #9ca3af; }
+  .ba-sig-line { width: 140px; border-bottom: 1.5px solid #0d2647; margin: 20px 0 5px auto; }
+  .ba-sig strong { font-family: 'DM Serif Display', serif; font-size: 13.5px; color: #0d2647; }
+
+  @media print {
+    .modal-bar { display: none !important; }
+    .modal-overlay { display: flex !important; padding: 0; background: white; }
+    .modal-box { box-shadow: none; border-radius: 0; border: none; }
+    body > *:not(.modal-overlay) { display: none; }
+  }
+  @media (max-width: 600px) {
+    .app-header { padding: 0 12px; }
+    .container { padding: 18px 12px 56px; }
+    .r2, .r3 { grid-template-columns: 1fr; }
+    .r2 .f:not(:last-child), .r3 .f:not(:last-child) { border-right: none; }
+    .status-bar { grid-template-columns: 1fr 1fr; }
+    .gst-strip { grid-template-columns: 1fr 1fr; }
+    .inv-doc, .ba-doc { padding: 22px 18px; }
+    .inv-2col { grid-template-columns: 1fr; }
+    .ba-lbl { min-width: 110px; width: 110px; }
+    .cm-add { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-mark">JAA</div>
+    <div>
+      <div class="brand-name"><span>JAA</span> Billing System</div>
+      <div class="brand-sub">Joshi Apte &amp; Associates</div>
+    </div>
+  </div>
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('invoice')" id="tab-invoice"><span class="tab-pip"></span> Invoice Generator</button>
+    <button class="tab-btn" onclick="switchTab('billing-advice')" id="tab-billing-advice"><span class="tab-pip"></span> Billing Advice</button>
+  </nav>
+  <div class="header-actions">
+    <button class="hdr-btn hdr-btn-clients" onclick="openClientManager()">👤 Client Database</button>
+  </div>
+</header>
+
+
+<!-- ══════════════ TAB 1 — INVOICE ══════════════ -->
+<div class="tab-panel active" id="panel-invoice">
+<div class="container">
+
+  <!-- FIRM & CLIENT -->
+  <div class="sh"><div class="sh-icon">🏛</div><div class="sh-title">Firm &amp; Client Details</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="f">
+      <label>Billing Firm</label>
+      <select id="firmName" onchange="onFirmChange()">
+        <option value="">— Select Firm —</option>
+        <option value="JAA">JAA — Joshi Apte &amp; Associates</option>
+        <option value="DVJ">DVJ</option>
+        <option value="LISPL">LISPL</option>
+        <option value="Other">Other (specify below)</option>
+      </select>
+    </div>
+    <div class="f" id="firmOtherField" style="display:none">
+      <label>Custom Firm Name</label>
+      <input type="text" id="firmOther" placeholder="Enter firm name" oninput="syncBA()">
+    </div>
+
+    <!-- CLIENT AUTOCOMPLETE -->
+    <div class="f">
+      <label>Client / Company Name</label>
+      <div class="ac-wrap">
+        <div class="ac-row">
+          <input type="text" id="clientName" placeholder="Start typing to search saved clients…"
+            oninput="onClientType()" onkeydown="onClientKey(event)" autocomplete="off">
+          <span class="ac-saved-badge" id="acSavedBadge">✓ Saved client</span>
+        </div>
+        <div class="ac-dropdown" id="acDropdown"></div>
+      </div>
+    </div>
+
+    <div class="f">
+      <label>Client Address</label>
+      <textarea id="clientAddress" placeholder="Full address of the client" oninput="syncBA()"></textarea>
+    </div>
+
+    <!-- CLIENT GSTIN with save button -->
+    <div class="r2">
+      <div class="f">
+        <label>Client GSTIN</label>
+        <div class="gstin-row">
+          <input type="text" id="clientGSTIN" placeholder="Enter GSTIN — auto-fills for saved clients"
+            maxlength="15" oninput="onGSTINType()">
+          <button class="gstin-save-btn" id="gstinSaveBtn" onclick="saveCurrentClient()">+ Save Client</button>
+        </div>
+      </div>
+      <div class="f">
+        <label>Firm GSTIN</label>
+        <input type="text" id="jaaGSTIN" placeholder="27AAAAA0000A1Z5" maxlength="15" oninput="detectGST()">
+      </div>
+    </div>
+  </div>
+
+  <!-- GST STRIP -->
+  <div class="gst-strip">
+    <div><div class="gc-label">GST Type</div><div class="gc-value" id="gstType" style="font-size:13px;padding-top:3px;color:rgba(255,255,255,0.6)">—</div><div class="gc-sub" id="gstTypeDesc">Enter GSTINs above</div></div>
+    <div><div class="gc-label">Rate</div><div class="gc-value" id="gstRateDisp">—%</div><div class="gc-sub" id="gstRateBreak">—</div></div>
+    <div><div class="gc-label">GST Amount</div><div class="gc-value" id="gstAmtDisp">₹0</div><div class="gc-sub" id="gstAmtBreak">—</div></div>
+  </div>
+
+  <!-- INVOICE & SERVICE -->
+  <div class="sh"><div class="sh-icon">📄</div><div class="sh-title">Invoice &amp; Service Details</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f">
+        <label>Invoice Number</label>
+        <div class="inv-no-row">
+          <input type="text" id="invoiceNo" placeholder="Select firm to auto-generate" oninput="onInvoiceNoEdit()">
+          <span class="inv-no-tag" id="invNoTag"></span>
+        </div>
+      </div>
+      <div class="f"><label>Invoice Date</label><input type="date" id="invoiceDate"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Financial Year</label><input type="text" id="financialYear" placeholder="2024-25" oninput="onFYChange()"></div>
+      <div class="f"><label>Cost Audit Report Date</label><input type="date" id="auditReportDate" onchange="syncBA()"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>No. of Items / Certificates</label><input type="number" id="numItems" placeholder="1" min="1" oninput="syncBA()"></div>
+      <div class="f"><label>XBRL Pages</label><input type="number" id="xbrlPages" placeholder="0" min="0" oninput="syncBA()"></div>
+    </div>
+    <div class="f"><label>Particulars of Service</label><textarea id="serviceDesc" placeholder="e.g. Cost Audit for FY 2024-25 under Section 148 of Companies Act 2013" oninput="syncBA()"></textarea></div>
+    <div class="r2">
+      <div class="f"><label>UDIN Taken?</label><div class="tg"><label><input type="radio" name="udin" value="Yes" onchange="syncBA()"><span>Yes</span></label><label><input type="radio" name="udin" value="No" onchange="syncBA()"><span>No</span></label></div></div>
+      <div class="f"><label>First Time Client?</label><div class="tg"><label><input type="radio" name="firstTime" value="Yes" onchange="syncBA()"><span>Yes</span></label><label><input type="radio" name="firstTime" value="No" onchange="syncBA()"><span>No</span></label></div></div>
+    </div>
+  </div>
+
+  <!-- FEES -->
+  <div class="sh"><div class="sh-icon">💰</div><div class="sh-title">Professional Fees</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="f"><label>Professional Fee (₹)</label><input type="number" id="professionalFee" placeholder="0.00" oninput="calcAmounts()"></div>
+    <div class="f"><label>GST Rate</label><div class="tg"><label><input type="radio" name="gstRate" value="18" checked onchange="calcAmounts()"><span>18%</span></label><label><input type="radio" name="gstRate" value="12" onchange="calcAmounts()"><span>12%</span></label><label><input type="radio" name="gstRate" value="5" onchange="calcAmounts()"><span>5%</span></label><label><input type="radio" name="gstRate" value="0" onchange="calcAmounts()"><span>Nil</span></label></div></div>
+  </div>
+  <div class="amt-panel">
+    <div class="amt-row"><span class="al">Professional Fee</span><span class="av" id="dispFee">₹0.00</span></div>
+    <div class="amt-row"><span class="al">Out of Pocket (OOP)</span><span class="av" id="dispOOP">₹0.00</span></div>
+    <div class="amt-row"><span class="al">Filing Charges (CRA2 + CRA4)</span><span class="av" id="dispFiling">₹0.00</span></div>
+    <div class="amt-row gst-r"><span class="al" id="gstLineLabel">GST (18%)</span><span class="av" id="dispGST">₹0.00</span></div>
+    <div class="amt-row tot-r"><span class="al">Total Payable</span><span class="av" id="dispTotal">₹0.00</span></div>
+  </div>
+
+  <!-- OOP & FILING — entered ONCE, flows to Billing Advice -->
+  <div class="sh"><div class="sh-icon">📋</div><div class="sh-title">OOP &amp; Filing Details</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="f">
+      <label>OOP Month Names <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--text3)">(comma separated)</span></label>
+      <input type="text" id="oopMonthNames" placeholder="e.g. April, June, August" oninput="syncBA()">
+    </div>
+    <div class="r3">
+      <div class="f"><label>OOP Month 1 (₹)</label><input type="number" id="oop1" placeholder="0" oninput="calcAmounts(); syncBA()"></div>
+      <div class="f"><label>OOP Month 2 (₹)</label><input type="number" id="oop2" placeholder="0" oninput="calcAmounts(); syncBA()"></div>
+      <div class="f"><label>OOP Month 3 (₹)</label><input type="number" id="oop3" placeholder="0" oninput="calcAmounts(); syncBA()"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>CRA2 Filed By</label><div class="tg tc"><label><input type="radio" name="cra2" value="JAA" onchange="toggleFiling(); syncBA()"><span>JAA</span></label><label><input type="radio" name="cra2" value="Company" checked onchange="toggleFiling(); syncBA()"><span>Company</span></label></div></div>
+      <div class="f"><label>CRA4 Filed By</label><div class="tg tc"><label><input type="radio" name="cra4" value="JAA" onchange="toggleFiling(); syncBA()"><span>JAA</span></label><label><input type="radio" name="cra4" value="Company" checked onchange="toggleFiling(); syncBA()"><span>Company</span></label></div></div>
+    </div>
+    <div class="filing-x" id="filingExtra">
+      <div class="r2">
+        <div class="f"><label>CRA2 Filing Cost (₹)</label><input type="number" id="cra2Cost" placeholder="0" oninput="calcAmounts(); syncBA()"></div>
+        <div class="f"><label>CRA4 Filing Cost (₹)</label><input type="number" id="cra4Cost" placeholder="0" oninput="calcAmounts(); syncBA()"></div>
+      </div>
+      <div class="r2">
+        <div class="f"><label>SRN of CRA2</label><input type="text" id="srnCRA2" placeholder="SRN Number" oninput="syncBA()"></div>
+        <div class="f"><label>SRN of CRA4</label><input type="text" id="srnCRA4" placeholder="SRN Number" oninput="syncBA()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="sh"><div class="sh-icon">👥</div><div class="sh-title">Team Details</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>Partner / Associate 1</label><input type="text" id="partner1" placeholder="Name" oninput="syncBA()"></div>
+      <div class="f"><label>Partner / Associate 2</label><input type="text" id="partner2" placeholder="Name" oninput="syncBA()"></div>
+    </div>
+    <div class="r3">
+      <div class="f"><label>Trainee 1</label><input type="text" id="trainee1" placeholder="Name" oninput="syncBA()"></div>
+      <div class="f"><label>Trainee 2</label><input type="text" id="trainee2" placeholder="Name" oninput="syncBA()"></div>
+      <div class="f"><label>Trainee 3</label><input type="text" id="trainee3" placeholder="Name" oninput="syncBA()"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Billing Contact Name</label><input type="text" id="contactName" placeholder="Person to send bill to" oninput="syncBA()"></div>
+      <div class="f"><label>Designation</label><input type="text" id="contactDesig" placeholder="CFO / Finance Manager" oninput="syncBA()"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Advice From (Partner)</label><input type="text" id="advicePartner" placeholder="Partner's name" oninput="syncBA()"></div>
+      <div class="f"><label>Advice Date</label><input type="date" id="adviceDate" onchange="syncBA()"></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="sh"><div class="sh-icon">📝</div><div class="sh-title">Additional Notes</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="f"><label>Any Other / Additional Information</label><textarea id="additionalInfo" placeholder="Special instructions, notes…" style="min-height:72px" oninput="syncBA()"></textarea></div>
+    <div class="f"><label>Admin — Name of Person Issuing Invoice</label><input type="text" id="adminIssuer" placeholder="Admin staff name" oninput="syncBA()"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" onclick="clearForm()">🗑 Clear</button>
+    <button class="btn btn-teal" onclick="switchTab('billing-advice')">📋 Billing Advice</button>
+    <button class="btn btn-navy" onclick="previewInvoice()">👁 Preview Invoice</button>
+    <button class="btn btn-gold" onclick="printInvoice()">🖨 Print / PDF</button>
+  </div>
+</div>
+</div>
+
+
+<!-- ══════════════ TAB 2 — BILLING ADVICE ══════════════ -->
+<div class="tab-panel" id="panel-billing-advice">
+<div class="container">
+  <div class="sync-notice">⚡ All details auto-synced from Invoice tab — OOP &amp; Filing entered once, shown here automatically. Only per-person OOP breakdown is entered here.</div>
+  <div class="status-bar">
+    <div class="sc"><div class="sc-l">Client</div><div class="sc-v navy" id="ba_client">—</div></div>
+    <div class="sc"><div class="sc-l">Firm</div><div class="sc-v navy" id="ba_firm">—</div></div>
+    <div class="sc"><div class="sc-l">FY</div><div class="sc-v" id="ba_fy">—</div></div>
+    <div class="sc"><div class="sc-l">Total Fee</div><div class="sc-v teal" id="ba_total">₹0</div></div>
+    <div class="sc"><div class="sc-l">GST Type</div><div class="sc-v" id="ba_gst">—</div></div>
+    <div class="sc"><div class="sc-l">UDIN</div><div class="sc-v" id="ba_udin">—</div></div>
+  </div>
+  <div class="sh" style="margin-top:22px"><div class="sh-icon" style="background:var(--teal-dark)">💼</div><div class="sh-title">OOP — Per Trainee Breakdown</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="r3">
+      <div class="f"><label>Trainee 1 OOP (₹)</label><input type="number" id="ba_tOOP1" placeholder="0" oninput="syncBA()"></div>
+      <div class="f"><label>Trainee 2 OOP (₹)</label><input type="number" id="ba_tOOP2" placeholder="0" oninput="syncBA()"></div>
+      <div class="f"><label>Trainee 3 OOP (₹)</label><input type="number" id="ba_tOOP3" placeholder="0" oninput="syncBA()"></div>
+    </div>
+  </div>
+  <div class="sh"><div class="sh-icon" style="background:var(--teal-dark)">🤝</div><div class="sh-title">OOP — Per Partner / Associate Breakdown</div><div class="sh-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>Partner / Associate 1 OOP (₹)</label><input type="number" id="ba_pOOP1" placeholder="0" oninput="syncBA()"></div>
+      <div class="f"><label>Partner / Associate 2 OOP (₹)</label><input type="number" id="ba_pOOP2" placeholder="0" oninput="syncBA()"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-ghost" onclick="switchTab('invoice')">← Invoice</button>
+    <button class="btn btn-navy" onclick="previewBA()">👁 Preview Advice</button>
+    <button class="btn btn-gold" onclick="printBA()">🖨 Print / PDF</button>
+  </div>
+</div>
+</div>
+
+
+<!-- CLIENT MANAGER MODAL -->
+<div class="modal-overlay" id="clientManagerModal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-bar">
+      <span>Client Database</span>
+      <button class="btn btn-ghost" style="padding:6px 13px;font-size:12px;color:#fff;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.08)" onclick="closeModal('clientManagerModal')">✕ Close</button>
+    </div>
+    <div class="cm-body">
+      <div class="cm-tip">💡 Add each client once with their <strong>correct GSTIN for your billing address</strong>. Next time you type their name, it auto-fills.</div>
+      <div class="cm-add">
+        <div class="cm-field"><label>Company Name</label><input type="text" id="cm_name" placeholder="e.g. Tata Chemicals Ltd" onkeydown="if(event.key==='Enter')addClient()"></div>
+        <div class="cm-field"><label>GSTIN</label><input type="text" id="cm_gstin" placeholder="27AAAAA0000A1Z5" maxlength="15" onkeydown="if(event.key==='Enter')addClient()"></div>
+        <button class="cm-add-btn" onclick="addClient()">+ Add</button>
+      </div>
+      <div class="cm-search"><input type="text" id="cm_search" placeholder="🔍 Search clients…" oninput="renderClientList()"></div>
+      <div class="cm-count" id="cm_count"></div>
+      <div class="cm-list" id="cm_list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal-box">
+    <div class="modal-bar">
+      <span>Invoice Preview</span>
+      <button class="btn btn-ghost" style="padding:6px 13px;font-size:12px;color:#fff;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.08)" onclick="closeModal('invoiceModal')">✕ Close</button>
+      <button class="btn btn-gold" style="padding:6px 13px;font-size:12px" onclick="printInvoice()">🖨 Print</button>
+    </div>
+    <div id="invoiceContent"></div>
+  </div>
+</div>
+
+<!-- BA MODAL -->
+<div class="modal-overlay" id="baModal">
+  <div class="modal-box" style="max-width:780px">
+    <div class="modal-bar">
+      <span>Billing Advice Preview</span>
+      <button class="btn btn-ghost" style="padding:6px 13px;font-size:12px;color:#fff;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.08)" onclick="closeModal('baModal')">✕ Close</button>
+      <button class="btn btn-gold" style="padding:6px 13px;font-size:12px" onclick="printBA()">🖨 Print</button>
+    </div>
+    <div id="baContent"></div>
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════
+//  PERSISTENT STORAGE
+// ═══════════════════════════════════════════
+async function storeGet(key) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch { return null; }
+}
+async function storeSet(key, val) {
+  try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+}
+
+// ═══════════════════════════════════════════
+//  CLIENT DATABASE
+// ═══════════════════════════════════════════
+let clients = []; // [{name, gstin}]
+
+async function loadClients() {
+  const saved = await storeGet('jaa_clients');
+  if (saved) clients = saved;
+  renderClientList();
+}
+
+async function saveClients() {
+  await storeSet('jaa_clients', clients);
+}
+
+function addClient() {
+  const name  = document.getElementById('cm_name').value.trim();
+  const gstin = document.getElementById('cm_gstin').value.trim().toUpperCase();
+  if (!name) { alert('Please enter a company name.'); return; }
+  if (clients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    alert('This client already exists. Delete first to update.'); return;
+  }
+  clients.push({ name, gstin });
+  clients.sort((a,b) => a.name.localeCompare(b.name));
+  document.getElementById('cm_name').value = '';
+  document.getElementById('cm_gstin').value = '';
+  saveClients();
+  renderClientList();
+}
+
+function deleteClient(i) {
+  if (!confirm(`Delete "${clients[i].name}"?`)) return;
+  clients.splice(i, 1);
+  saveClients();
+  renderClientList();
+}
+
+function renderClientList() {
+  const q    = (document.getElementById('cm_search')?.value || '').toLowerCase();
+  const list = document.getElementById('cm_list');
+  const filtered = clients.filter(c =>
+    c.name.toLowerCase().includes(q) || (c.gstin||'').toLowerCase().includes(q)
+  );
+  document.getElementById('cm_count').textContent =
+    `${clients.length} client${clients.length!==1?'s':''} saved${q?' (filtered: '+filtered.length+')':''}`;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="cm-empty">${clients.length ? 'No clients match your search.' : 'No clients saved yet. Add your first client above.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map((c, fi) => {
+    const realIdx = clients.indexOf(c);
+    return `<div class="cm-row">
+      <div class="cm-row-name">${c.name}</div>
+      <div class="cm-row-gstin">${c.gstin || '<span style="color:var(--text3);font-style:italic">No GSTIN</span>'}</div>
+      <button class="cm-row-del" onclick="deleteClient(${realIdx})" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function openClientManager() {
+  renderClientList();
+  document.getElementById('clientManagerModal').classList.add('active');
+}
+
+// Save current form's client directly from the GSTIN field
+function saveCurrentClient() {
+  const name  = document.getElementById('clientName').value.trim();
+  const gstin = document.getElementById('clientGSTIN').value.trim().toUpperCase();
+  if (!name) { alert('Enter the company name first.'); return; }
+  if (clients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    alert(`"${name}" is already saved in your client database.`); return;
+  }
+  clients.push({ name, gstin });
+  clients.sort((a,b) => a.name.localeCompare(b.name));
+  saveClients();
+  document.getElementById('gstinSaveBtn').style.display = 'none';
+  document.getElementById('acSavedBadge').style.display = 'inline-block';
+}
+
+// ═══════════════════════════════════════════
+//  AUTOCOMPLETE
+// ═══════════════════════════════════════════
+let acIdx = -1;
+
+function onClientType() {
+  const q   = document.getElementById('clientName').value.trim();
+  const dd  = document.getElementById('acDropdown');
+  document.getElementById('acSavedBadge').style.display = 'none';
+  document.getElementById('gstinSaveBtn').style.display = 'none';
+  acIdx = -1;
+  syncBA();
+
+  if (!q) { dd.classList.remove('open'); return; }
+
+  const matches = clients.filter(c => c.name.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+  const exactMatch = clients.some(c => c.name.toLowerCase() === q.toLowerCase());
+
+  let html = matches.map((c, i) => `
+    <div class="ac-item" data-i="${i}" onmousedown="selectClient('${escHtml(c.name)}','${escHtml(c.gstin||'')}')">
+      <div class="ai-name">${highlight(c.name, q)}</div>
+      <div class="ai-gstin">${c.gstin || '<span style="color:var(--text3)">No GSTIN saved</span>'}</div>
+    </div>`).join('');
+
+  if (!exactMatch) {
+    html += `<div class="ac-new" onmousedown="useNewClient('${escHtml(q)}')">＋ Use "<strong>${escHtml(q)}</strong>" as new client</div>`;
+  }
+
+  dd.innerHTML = html;
+  dd.classList.add('open');
+}
+
+function highlight(text, q) {
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return escHtml(text);
+  return escHtml(text.substring(0,i)) + `<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">${escHtml(text.substring(i,i+q.length))}</mark>` + escHtml(text.substring(i+q.length));
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function onClientKey(e) {
+  const dd    = document.getElementById('acDropdown');
+  const items = dd.querySelectorAll('.ac-item, .ac-new');
+  if (e.key === 'ArrowDown') { e.preventDefault(); acIdx = Math.min(acIdx+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('selected',i===acIdx)); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acIdx = Math.max(acIdx-1, 0); items.forEach((el,i)=>el.classList.toggle('selected',i===acIdx)); }
+  else if (e.key === 'Enter' && acIdx >= 0) { e.preventDefault(); items[acIdx].dispatchEvent(new Event('mousedown')); }
+  else if (e.key === 'Escape') closeAC();
+}
+
+function selectClient(name, gstin) {
+  document.getElementById('clientName').value  = name;
+  document.getElementById('clientGSTIN').value = gstin;
+  document.getElementById('acSavedBadge').style.display = 'inline-block';
+  document.getElementById('gstinSaveBtn').style.display = 'none';
+  closeAC();
+  detectGST(); syncBA();
+}
+
+function useNewClient(name) {
+  document.getElementById('clientName').value = name;
+  closeAC();
+  document.getElementById('gstinSaveBtn').style.display = 'inline-block';
+  syncBA();
+}
+
+function closeAC() { document.getElementById('acDropdown').classList.remove('open'); }
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('clientName').contains(e.target) &&
+      !document.getElementById('acDropdown').contains(e.target)) closeAC();
+});
+
+function onGSTINType() {
+  const name = document.getElementById('clientName').value.trim();
+  const isNew = !clients.some(c => c.name.toLowerCase() === name.toLowerCase());
+  document.getElementById('gstinSaveBtn').style.display = (name && isNew) ? 'inline-block' : 'none';
+  detectGST();
+}
+
+// ═══════════════════════════════════════════
+//  INVOICE NUMBER  — per-firm, per-FY counter
+// ═══════════════════════════════════════════
+let counters = {};          // { JAA: { "2025-26": 3 }, DVJ: { "2025-26": 1 } }
+let usedNos  = {};          // { JAA: { "2025-26": ["JAA/2025-26/001", ...] } }
+let invManual = false;
+
+async function loadCounters() {
+  const c = await storeGet('jaa_inv_counters');
+  const u = await storeGet('jaa_inv_used');
+  if (c) counters = c;
+  if (u) usedNos  = u;
+}
+async function saveCounters() {
+  await storeSet('jaa_inv_counters', counters);
+  await storeSet('jaa_inv_used', usedNos);
+}
+
+function getCurrentFY() {
+  const v = document.getElementById('financialYear').value.trim();
+  if (v) return v;
+  const now = new Date(), yr = now.getFullYear(), mo = now.getMonth()+1;
+  return mo >= 4 ? `${yr}-${String(yr+1).slice(2)}` : `${yr-1}-${String(yr).slice(2)}`;
+}
+
+function generateInvoiceNo() {
+  if (invManual) return;
+  const firm = getFirm();
+  if (!firm) { document.getElementById('invoiceNo').value=''; document.getElementById('invNoTag').style.display='none'; return; }
+  const fy   = getCurrentFY();
+  if (!counters[firm]) counters[firm] = {};
+  const next = (counters[firm][fy] || 0) + 1;
+  const no   = `${firm}/${fy}/${String(next).padStart(3,'0')}`;
+  document.getElementById('invoiceNo').value = no;
+  showInvTag(`#${next} · ${firm} · ${fy}`, 'ok');
+}
+
+function onInvoiceNoEdit() {
+  const val  = document.getElementById('invoiceNo').value.trim();
+  const firm = getFirm(), fy = getCurrentFY();
+  if (!val) { invManual=false; generateInvoiceNo(); return; }
+  invManual = true;
+  const used = usedNos[firm]?.[fy] || [];
+  if (used.includes(val)) showInvTag('⚠ Already used!', 'err');
+  else showInvTag('Custom number', 'warn');
+}
+
+function onFYChange() { generateInvoiceNo(); syncBA(); }
+
+function showInvTag(text, cls) {
+  const tag = document.getElementById('invNoTag');
+  tag.textContent = text;
+  tag.className = 'inv-no-tag ' + cls;
+  tag.style.display = 'inline-block';
+}
+
+async function commitInvoiceNo() {
+  const no = document.getElementById('invoiceNo').value.trim();
+  if (!no) return;
+  const firm = getFirm(), fy = getCurrentFY();
+  if (!counters[firm]) counters[firm] = {};
+  if (!usedNos[firm])  usedNos[firm]  = {};
+  if (!usedNos[firm][fy]) usedNos[firm][fy] = [];
+  if (!usedNos[firm][fy].includes(no)) usedNos[firm][fy].push(no);
+  const match = no.match(/^[A-Z]+\/[\d-]+\/(\d+)$/);
+  if (match) {
+    const seq = parseInt(match[1]);
+    if (seq >= (counters[firm][fy] || 0)) counters[firm][fy] = seq;
+  }
+  await saveCounters();
+}
+
+// ═══════════════════════════════════════════
+//  CORE LOGIC
+// ═══════════════════════════════════════════
+function switchTab(n) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+  syncBA();
+}
+
+function onFirmChange() {
+  document.getElementById('firmOtherField').style.display =
+    document.getElementById('firmName').value === 'Other' ? 'block' : 'none';
+  invManual = false;
+  generateInvoiceNo();
+  syncBA();
+}
+
+function getFirm() {
+  const s = document.getElementById('firmName').value;
+  return s === 'Other' ? (document.getElementById('firmOther').value||'') : (s||'');
+}
+function getRate() { return parseFloat(document.querySelector('input[name="gstRate"]:checked')?.value||18); }
+
+function detectGST() {
+  const cG = document.getElementById('clientGSTIN').value.trim();
+  const jG = document.getElementById('jaaGSTIN').value.trim();
+  calcAmounts();
+  if (cG.length<2||jG.length<2) {
+    document.getElementById('gstType').textContent     = '—';
+    document.getElementById('gstTypeDesc').textContent = 'Enter GSTINs above';
+    document.getElementById('gstRateDisp').textContent = '—%';
+    document.getElementById('gstRateBreak').textContent= '—';
+    return;
+  }
+  const intra = cG.substring(0,2)===jG.substring(0,2), r = getRate();
+  document.getElementById('gstType').textContent      = intra ? 'CGST + SGST' : 'IGST';
+  document.getElementById('gstTypeDesc').textContent  = intra ? 'Intra-State' : 'Inter-State';
+  document.getElementById('gstRateDisp').textContent  = r+'%';
+  document.getElementById('gstRateBreak').textContent = intra ? `${r/2}% + ${r/2}%` : `IGST ${r}%`;
+  syncBA();
+}
+
+function calcAmounts() {
+  const fee = parseFloat(document.getElementById('professionalFee').value)||0;
+  const oop = (parseFloat(document.getElementById('oop1').value)||0)+
+              (parseFloat(document.getElementById('oop2').value)||0)+
+              (parseFloat(document.getElementById('oop3').value)||0);
+  const c2  = parseFloat(document.getElementById('cra2Cost').value)||0;
+  const c4  = parseFloat(document.getElementById('cra4Cost').value)||0;
+  const fil = c2+c4, r = getRate(), tax = fee+oop+fil, gst = tax*r/100, tot = tax+gst;
+  const f   = v => '₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('dispFee').textContent     = f(fee);
+  document.getElementById('dispOOP').textContent     = f(oop);
+  document.getElementById('dispFiling').textContent  = f(fil);
+  document.getElementById('dispGST').textContent     = f(gst);
+  document.getElementById('dispTotal').textContent   = f(tot);
+  document.getElementById('gstLineLabel').textContent= `GST (${r}%)`;
+  document.getElementById('gstAmtDisp').textContent  = '₹'+Math.round(gst).toLocaleString('en-IN');
+  detectGST(); syncBA();
+}
+document.querySelectorAll('input[name="gstRate"]').forEach(r=>r.addEventListener('change',calcAmounts));
+
+function toggleFiling() {
+  const c2 = document.querySelector('input[name="cra2"]:checked')?.value;
+  const c4 = document.querySelector('input[name="cra4"]:checked')?.value;
+  document.getElementById('filingExtra').style.display = (c2==='JAA'||c4==='JAA') ? 'block' : 'none';
+  calcAmounts();
+}
+
+function syncBA() {
+  const cl  = document.getElementById('clientName').value||'—';
+  const frm = getFirm()||'—';
+  const fy  = document.getElementById('financialYear').value||'—';
+  const fee = parseFloat(document.getElementById('professionalFee').value)||0;
+  const oop = (parseFloat(document.getElementById('oop1').value)||0)+(parseFloat(document.getElementById('oop2').value)||0)+(parseFloat(document.getElementById('oop3').value)||0);
+  const c2c = parseFloat(document.getElementById('cra2Cost').value)||0;
+  const c4c = parseFloat(document.getElementById('cra4Cost').value)||0;
+  const r   = getRate(), tax = fee+oop+c2c+c4c, tot = tax+tax*r/100;
+  const cG  = document.getElementById('clientGSTIN').value.trim();
+  const jG  = document.getElementById('jaaGSTIN').value.trim();
+  const gt  = cG.length>=2&&jG.length>=2?(cG.substring(0,2)===jG.substring(0,2)?'CGST+SGST':'IGST'):'—';
+  const udn = document.querySelector('input[name="udin"]:checked')?.value||'—';
+  document.getElementById('ba_client').textContent = cl.length>15?cl.substring(0,13)+'…':cl;
+  document.getElementById('ba_firm').textContent   = frm;
+  document.getElementById('ba_fy').textContent     = fy;
+  document.getElementById('ba_total').textContent  = '₹'+tot.toLocaleString('en-IN',{maximumFractionDigits:0});
+  document.getElementById('ba_gst').textContent    = gt;
+  document.getElementById('ba_udin').textContent   = udn;
+}
+
+function fmtDate(v,opts){if(!v)return'—';return new Date(v).toLocaleDateString('en-IN',opts||{day:'2-digit',month:'long',year:'numeric'});}
+
+function getCalc(){
+  const fee=parseFloat(document.getElementById('professionalFee').value)||0;
+  const oop=(parseFloat(document.getElementById('oop1').value)||0)+(parseFloat(document.getElementById('oop2').value)||0)+(parseFloat(document.getElementById('oop3').value)||0);
+  const c2=parseFloat(document.getElementById('cra2Cost').value)||0,c4=parseFloat(document.getElementById('cra4Cost').value)||0;
+  const fil=c2+c4,r=getRate(),tax=fee+oop+fil,gst=tax*r/100,tot=tax+gst;
+  const cG=document.getElementById('clientGSTIN').value.trim(),jG=document.getElementById('jaaGSTIN').value.trim();
+  const intra=cG.length>=2&&jG.length>=2&&cG.substring(0,2)===jG.substring(0,2);
+  let gr='';
+  if(r>0){if(intra)gr=`<tr class="gst-r"><td>CGST @ ${r/2}%</td><td colspan="2"></td><td>₹${(gst/2).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr><tr class="gst-r"><td>SGST @ ${r/2}%</td><td colspan="2"></td><td>₹${(gst/2).toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>`;
+  else gr=`<tr class="gst-r"><td>IGST @ ${r}%</td><td colspan="2"></td><td>₹${gst.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>`;}
+  return{fee,oop,fil,tax,gst,tot,gr,intra,r};
+}
+
+function previewInvoice(){
+  const d=getCalc(),frm=getFirm();
+  const cn=document.getElementById('clientName').value||'[Client Name]';
+  const ca=document.getElementById('clientAddress').value||'';
+  const ino=document.getElementById('invoiceNo').value||'—';
+  const idt=fmtDate(document.getElementById('invoiceDate').value);
+  const fy=document.getElementById('financialYear').value||'—';
+  const sd=document.getElementById('serviceDesc').value||'Professional Services';
+  const ap=document.getElementById('advicePartner').value||'—';
+  const cG=document.getElementById('clientGSTIN').value||'—';
+  const jG=document.getElementById('jaaGSTIN').value||'—';
+  const udn=document.querySelector('input[name="udin"]:checked')?.value||'—';
+  const cn2=document.getElementById('contactName').value||'';
+  const cdg=document.getElementById('contactDesig').value||'';
+  const adt=document.getElementById('auditReportDate').value;
+  const ai=document.getElementById('additionalInfo').value||'';
+  const gtag=d.intra?'CGST + SGST':(cG!=='—'&&jG!=='—'?'IGST':'GST');
+  const f=v=>v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('invoiceContent').innerHTML=`
+<div class="inv-doc">
+  <div class="inv-hdr">
+    <div><div class="inv-firm">${frm}</div><div class="inv-sub">Cost Accountants &amp; Consultants</div>${jG!=='—'?`<div class="inv-sub" style="margin-top:2px">GSTIN: ${jG}</div>`:''}</div>
+    <div class="inv-badge" style="text-align:right"><div class="il">Tax Invoice</div><div class="ino">${ino}</div><div class="idt">${idt}</div></div>
+  </div>
+  <div class="inv-2col">
+    <div class="inv-party"><h4>Bill To</h4><p><strong style="font-size:14px">${cn}</strong><br>${ca.replace(/\n/g,'<br>')}${cG!=='—'?`<br><span style="color:#6b7280;font-size:12px">GSTIN: ${cG}</span>`:''}${cn2?`<br><span style="color:#6b7280;font-size:12px">Attn: ${cn2}${cdg?', '+cdg:''}</span>`:''}</p></div>
+    <div class="inv-party"><h4>Details</h4><p>Financial Year: <strong>${fy}</strong><br>UDIN: <strong>${udn}</strong><br>${adt?`Audit Date: <strong>${fmtDate(adt,{day:'2-digit',month:'short',year:'numeric'})}</strong><br>`:''}GST: <span class="gtag">${gtag}</span></p></div>
+  </div>
+  <div class="inv-desc"><h4>Particulars of Service</h4><p>${sd}</p></div>
+  <table class="inv-tbl">
+    <thead><tr><th>Description</th><th>SAC</th><th>Taxable</th><th>Amount (₹)</th></tr></thead>
+    <tbody>
+      <tr><td>Professional Fee</td><td>998231</td><td>Yes</td><td>₹${f(d.fee)}</td></tr>
+      ${d.oop>0?`<tr><td>Out of Pocket Expenses</td><td>998231</td><td>Yes</td><td>₹${f(d.oop)}</td></tr>`:''}
+      ${d.fil>0?`<tr><td>Filing Charges (CRA2 / CRA4)</td><td>998231</td><td>Yes</td><td>₹${f(d.fil)}</td></tr>`:''}
+      <tr class="sub-r"><td colspan="3">Taxable Amount</td><td>₹${f(d.tax)}</td></tr>
+      ${d.gr}
+      <tr class="tot-r"><td colspan="3">Total Amount Payable</td><td>₹${f(d.tot)}</td></tr>
+    </tbody>
+  </table>
+  <div class="inv-ftr">
+    <div class="note"><p>Subject to Mumbai Jurisdiction.</p><p style="margin-top:4px">Payment due within 30 days.</p>${ai?`<p style="margin-top:4px">${ai}</p>`:''}</div>
+    <div class="sig"><p>For</p><strong>${frm}</strong><p style="margin-top:16px;border-top:1px solid #e8e5df;padding-top:6px">${ap}</p><p>Partner</p></div>
+  </div>
+</div>`;
+  document.getElementById('invoiceModal').classList.add('active');
+  commitInvoiceNo();
+}
+
+function previewBA(){
+  const frm=getFirm(),cl=document.getElementById('clientName').value||'—';
+  const ca=document.getElementById('clientAddress').value||'';
+  const fy=document.getElementById('financialYear').value||'—';
+  const adt=fmtDate(document.getElementById('auditReportDate').value,{day:'2-digit',month:'short',year:'numeric'});
+  const ni=document.getElementById('numItems').value||'—';
+  const udn=document.querySelector('input[name="udin"]:checked')?.value||'—';
+  const ft=document.querySelector('input[name="firstTime"]:checked')?.value||'—';
+  const sd=document.getElementById('serviceDesc').value||'—';
+  const xb=document.getElementById('xbrlPages').value||'0';
+  const p1=document.getElementById('partner1').value,p2=document.getElementById('partner2').value;
+  const t1=document.getElementById('trainee1').value,t2=document.getElementById('trainee2').value,t3=document.getElementById('trainee3').value;
+  const o1=parseFloat(document.getElementById('oop1').value)||0,o2=parseFloat(document.getElementById('oop2').value)||0,o3=parseFloat(document.getElementById('oop3').value)||0;
+  const mns=document.getElementById('oopMonthNames').value.split(',').map(s=>s.trim());
+  const c2by=document.querySelector('input[name="cra2"]:checked')?.value||'—';
+  const c4by=document.querySelector('input[name="cra4"]:checked')?.value||'—';
+  const sC2=document.getElementById('srnCRA2').value||'—',sC4=document.getElementById('srnCRA4').value||'—';
+  const c2c=parseFloat(document.getElementById('cra2Cost').value)||0,c4c=parseFloat(document.getElementById('cra4Cost').value)||0;
+  const cn=document.getElementById('contactName').value||'—',cdg=document.getElementById('contactDesig').value||'—';
+  const ap=document.getElementById('advicePartner').value||'—';
+  const avd=fmtDate(document.getElementById('adviceDate').value,{day:'2-digit',month:'long',year:'numeric'});
+  const ai=document.getElementById('additionalInfo').value||'';
+  const adm=document.getElementById('adminIssuer').value||'—';
+  const ino=document.getElementById('invoiceNo').value||'—';
+  const idt=fmtDate(document.getElementById('invoiceDate').value,{day:'2-digit',month:'long',year:'numeric'});
+  const tO=[parseFloat(document.getElementById('ba_tOOP1').value)||0,parseFloat(document.getElementById('ba_tOOP2').value)||0,parseFloat(document.getElementById('ba_tOOP3').value)||0];
+  const pO=[parseFloat(document.getElementById('ba_pOOP1').value)||0,parseFloat(document.getElementById('ba_pOOP2').value)||0];
+  const cG=document.getElementById('clientGSTIN').value.trim(),jG=document.getElementById('jaaGSTIN').value.trim();
+  let taxStr='CGST &amp; SGST / IGST';
+  if(cG.length>=2&&jG.length>=2)taxStr=cG.substring(0,2)===jG.substring(0,2)?'<strong>CGST &amp; SGST</strong>':'<strong>IGST</strong>';
+  const f2=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  let oopr='';[[o1,0],[o2,1],[o3,2]].forEach(([v,i])=>{if(v>0||mns[i])oopr+=`<tr><td>Month ${i+1}: ${mns[i]||'—'}</td><td>${f2(v)}</td></tr>`;});
+  if(oopr)oopr+=`<tr class="mini-tot"><td>Total OOP</td><td>${f2(o1+o2+o3)}</td></tr>`;
+  let tr='';[[t1,tO[0]],[t2,tO[1]],[t3,tO[2]]].forEach(([n,v],i)=>{if(n||v)tr+=`<tr><td>${n||'Trainee '+(i+1)}</td><td>${f2(v)}</td></tr>`;});
+  let pr='';[[p1,pO[0]],[p2,pO[1]]].forEach(([n,v],i)=>{if(n||v)pr+=`<tr><td>${n||'Partner '+(i+1)}</td><td>${f2(v)}</td></tr>`;});
+  const row=(n,l,v)=>`<tr class="ba-row"><td class="ba-num">${n}</td><td class="ba-lbl">${l}</td><td class="ba-val">${v}</td></tr>`;
+  const bp=(val,yes='Yes')=>`<span class="badge-p ${val===yes?'bp-yes':'bp-no'}">${val}</span>`;
+  const bf=val=>`<span class="badge-p ${val==='JAA'?'bp-jaa':'bp-co'}">${val}</span>`;
+  document.getElementById('baContent').innerHTML=`
+<div class="ba-doc">
+  <div class="ba-hdr"><div class="ba-firm">${frm}</div><div class="ba-firm-sub">Cost Accountants &amp; Consultants · Mumbai</div><div class="ba-title">Billing Advice</div><div class="ba-ref">Ref: ${ino!=='—'?ino:'Pending'} &nbsp;|&nbsp; Date: ${idt}</div></div>
+  <table class="ba-tbl">
+    ${row(1,'Firm Name for Bill',`<strong>${frm}</strong>`)}
+    ${row(2,'Name &amp; Address of Company',`<strong>${cl}</strong>${ca?'<br><span style="font-size:11.5px;color:#6b7280">'+ca.replace(/\n/g,', ')+'</span>':''}<br><span style="font-size:11px;color:#9ca3af">Applicable Tax: ${taxStr}</span>`)}
+    ${row(3,'Date of Cost Audit Report',`${adt} &nbsp; Items / Certificates: <strong>${ni}</strong>`)}
+    ${row(4,'UDIN / First Time Client / FY',`UDIN: ${bp(udn)} &nbsp; First Time: ${bp(ft)} &nbsp; FY: <strong>${fy}</strong>`)}
+    ${row(5,'Particulars of Professional Service',sd)}
+    ${row(6,'XBRL Pages &amp; Team Assisted',`XBRL Pages: <strong>${xb}</strong><br>Partner / Associate: <strong>${[p1,p2].filter(Boolean).join(', ')||'—'}</strong>`)}
+    ${row(7,'Trainees Assisted',[t1,t2,t3].filter(Boolean).join(', ')||'—')}
+    ${row(8,'Months — OOP Incurred',oopr?`<table class="mini-tbl">${oopr}</table>`:(document.getElementById('oopMonthNames').value||'—'))}
+    ${row(9,'OOP of Trainees',tr?`<table class="mini-tbl">${tr}</table>`:'—')}
+    ${row(10,'OOP of Partner / Associate / CMA',pr?`<table class="mini-tbl">${pr}</table>`:'—')}
+    ${row(11,'Who Filed Form CRA2 / CRA4',`CRA2: ${bf(c2by)} &nbsp; CRA4: ${bf(c4by)}`)}
+    ${row(12,'SRN of CRA2 &amp; CRA4 (Filed by JAA)',`CRA2: <strong>${sC2}</strong> &nbsp;|&nbsp; CRA4: <strong>${sC4}</strong>`)}
+    ${row(13,'Cost of Filing (JAA)',`CRA2: <strong>${f2(c2c)}</strong> &nbsp;|&nbsp; CRA4: <strong>${f2(c4c)}</strong>`)}
+    ${row(14,'Concerned Person — Bill to be Sent',`Name: <strong>${cn}</strong> &nbsp; Designation: <strong>${cdg}</strong>`)}
+    ${ai?row(15,'Any Other / Additional Information',ai):''}
+  </table>
+  <div class="ba-admin"><h5>Admin Only</h5><div class="ba-admin-g">
+    <div class="ba-admin-item"><div class="ai-l">Date of Issue of Invoice</div><div class="ai-v">${idt}</div></div>
+    <div class="ba-admin-item"><div class="ai-l">Name of Person Issuing Invoice</div><div class="ai-v">${adm}</div></div>
+    <div class="ba-admin-item"><div class="ai-l">Invoice Number</div><div class="ai-v">${ino}</div></div>
+    <div class="ba-admin-item"><div class="ai-l">Signature / Initials</div><div class="ai-v" style="border-bottom:1px solid #aaa;min-width:80px;display:inline-block;height:15px"></div></div>
+  </div></div>
+  <div class="ba-ftr"><div class="note">Subject to Mumbai Jurisdiction.<br>This advice is for internal use only.</div><div class="ba-sig"><p>Advice from (Partner)</p><div class="ba-sig-line"></div><strong>${ap}</strong><p style="margin-top:3px">Date: ${avd}</p></div></div>
+</div>`;
+  document.getElementById('baModal').classList.add('active');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+function printInvoice(){previewInvoice();setTimeout(()=>window.print(),400);}
+function printBA(){previewBA();setTimeout(()=>window.print(),400);}
+
+function clearForm(){
+  if(!confirm('Clear all fields?'))return;
+  document.querySelectorAll('input[type=text],input[type=number],input[type=date],textarea,select').forEach(el=>el.value='');
+  document.getElementById('invoiceDate').valueAsDate=new Date();
+  document.getElementById('adviceDate').valueAsDate=new Date();
+  document.getElementById('firmOtherField').style.display='none';
+  document.getElementById('filingExtra').style.display='none';
+  document.getElementById('acSavedBadge').style.display='none';
+  document.getElementById('gstinSaveBtn').style.display='none';
+  document.getElementById('invNoTag').style.display='none';
+  invManual=false; closeAC(); calcAmounts(); syncBA();
+}
+
+['invoiceModal','baModal','clientManagerModal'].forEach(id=>
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);}));
+
+// INIT
+document.getElementById('invoiceDate').valueAsDate=new Date();
+document.getElementById('adviceDate').valueAsDate=new Date();
+loadClients();
+loadCounters();
+</script>
+</body>
+</html>

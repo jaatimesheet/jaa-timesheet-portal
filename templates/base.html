@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}JAA Timesheet{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% if session.get('emp_id') or session.get('role') in ('admin','partner') %}
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <img src="/static/images/JAA_icon_square.png" alt="JAA" style="width:72px;height:72px;object-fit:contain;border-radius:14px;margin-bottom:11px;display:block">
+    <h1>Joshi Apte & Associates</h1>
+    <p>Timesheet Portal</p>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-name">{{ session.get('emp_name') or 'Admin' }}</div>
+    <div class="user-role">{% if session.get('role')=='partner' %}Partner{% elif session.get('role')=='admin' %}Administrator{% else %}{{ session.get('emp_role','Employee') }}{% endif %}</div>
+    {% if session.get('branch_label') %}
+    <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;letter-spacing:.3px">{{ session.get('branch_label') }}</div>
+    {% endif %}
+  </div>
+  {% if session.get('superadmin') and session.get('branch') %}
+  <a href="/superadmin/back" style="display:flex;align-items:center;gap:8px;margin:8px 16px 0;padding:7px 12px;background:rgba(201,168,76,.15);border-radius:8px;color:#c9a84c;font-size:12px;font-weight:600;text-decoration:none;transition:background .15s" onmouseover="this.style.background='rgba(201,168,76,.25)'" onmouseout="this.style.background='rgba(201,168,76,.15)'">
+    ← All Branches
+  </a>
+  {% endif %}
+  <nav class="sidebar-nav">
+    {% set role = session.get('role') %}
+
+    {% if role == 'admin' %}
+    {# ── ADMIN MENU ── #}
+    <div class="nav-section">Overview</div>
+    <a href="/admin" class="nav-item {% if request.path=='/admin' %}active{% endif %}"><span class="nav-icon">📊</span>Dashboard</a>
+    <div class="nav-section">Reporting</div>
+    <a href="/admin/entries" class="nav-item {% if request.path=='/admin/entries' %}active{% endif %}"><span class="nav-icon">📋</span>All Entries</a>
+    <a href="/admin/attendance" class="nav-item {% if request.path=='/admin/attendance' %}active{% endif %}"><span class="nav-icon">🕐</span>Attendance Log</a>
+    <div class="nav-section">Administration</div>
+    <a href="/admin/staff" class="nav-item {% if request.path=='/admin/staff' %}active{% endif %}"><span class="nav-icon">👥</span>Manage Staff</a>
+    <a href="/admin/leaves" class="nav-item {% if request.path=='/admin/leaves' %}active{% endif %}"><span class="nav-icon">🏖</span>Manage Leaves</a>
+    <a href="/admin/companies" class="nav-item {% if request.path=='/admin/companies' %}active{% endif %}"><span class="nav-icon">🏢</span>Companies</a>
+    <a href="/admin/work-mapping" class="nav-item {% if request.path=='/admin/work-mapping' %}active{% endif %}"><span class="nav-icon">🗂</span>Work Mapping</a>
+    <a href="/admin/tasks" class="nav-item {% if request.path=='/admin/tasks' %}active{% endif %}"><span class="nav-icon">✅</span>Tasks</a>
+    <a href="/admin/reimbursements" class="nav-item {% if request.path.startswith('/admin/reimbursements') %}active{% endif %}" style="display:flex;align-items:center;justify-content:space-between">
+      <span><span class="nav-icon">💸</span>Reimbursements</span>
+      <span id="reimb-pending-badge" style="display:none;background:#DC2626;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700"></span>
+    </a>
+    <a href="/admin/documents" class="nav-item {% if request.path=='/admin/documents' %}active{% endif %}"><span class="nav-icon">📁</span>Documents</a>
+    <a href="/learning" class="nav-item {% if request.path.startswith('/learning') %}active{% endif %}"><span class="nav-icon">📚</span>Learning Hub</a>
+    <a href="/birthdays" class="nav-item {% if request.path=='/birthdays' %}active{% endif %}"><span class="nav-icon">🎂</span>Birthdays</a>
+    <a href="/admin/settings" class="nav-item {% if request.path=='/admin/settings' %}active{% endif %}"><span class="nav-icon">⚙️</span>Settings</a>
+    <a href="/notifications" class="nav-item {% if request.path=='/notifications' %}active{% endif %}"><span class="nav-icon">🔔</span>Notifications</a>
+
+    {% elif role == 'partner' %}
+    {# ── PARTNER MENU ── #}
+    <div class="nav-section">Overview</div>
+    <a href="/admin" class="nav-item {% if request.path=='/admin' %}active{% endif %}"><span class="nav-icon">📊</span>Dashboard</a>
+    <div class="nav-section">Work</div>
+    <a href="/partner/assignments" class="nav-item {% if request.path.startswith('/partner/assignments') %}active{% endif %}"><span class="nav-icon">🏢</span>Company Assignments</a>
+    <a href="/partner/tasks" class="nav-item {% if request.path.startswith('/partner/tasks') %}active{% endif %}"><span class="nav-icon">✅</span>Tasks</a>
+    <a href="/admin/reports" class="nav-item {% if request.path=='/admin/reports' %}active{% endif %}"><span class="nav-icon">📈</span>Reports</a>
+    <div class="nav-section">Finance</div>
+    <a href="/partner/billing-advice" class="nav-item {% if '/billing' in request.path %}active{% endif %}"><span class="nav-icon">💼</span>Billing Advice</a>
+    {% if session.get('emp_name') == 'Ashish Thatte' %}
+    <a href="/partner/settings" class="nav-item {% if request.path == '/partner/settings' %}active{% endif %}"><span class="nav-icon">⚙️</span>Settings</a>
+    <a href="/partner/finance-controls" class="nav-item {% if '/finance-controls' in request.path %}active{% endif %}"><span class="nav-icon">🔐</span>Finance Controls</a>
+    {% endif %}
+    <div class="nav-section">More</div>
+    <a href="/birthdays" class="nav-item {% if request.path=='/birthdays' %}active{% endif %}"><span class="nav-icon">🎂</span>Birthdays</a>
+    <a href="/notifications" class="nav-item {% if request.path=='/notifications' %}active{% endif %}"><span class="nav-icon">🔔</span>Notifications</a>
+
+    {% else %}
+    {# ── EMPLOYEE MENU ── #}
+    <a href="/timesheet" class="nav-item {% if request.path=='/timesheet' %}active{% endif %}"><span class="nav-icon">📝</span>My Timesheet</a>
+    <a href="/my-entries" class="nav-item {% if request.path=='/my-entries' %}active{% endif %}"><span class="nav-icon">📋</span>My Entries</a>
+    <a href="/my-tasks" class="nav-item {% if request.path=='/my-tasks' %}active{% endif %}"><span class="nav-icon">✅</span>My Tasks</a>
+    <a href="/my-reimbursements" class="nav-item {% if request.path=='/my-reimbursements' %}active{% endif %}"><span class="nav-icon">💸</span>My Reimbursements</a>
+    <a href="/my-leaves" class="nav-item {% if request.path=='/my-leaves' %}active{% endif %}"><span class="nav-icon">🏖</span>My Leaves</a>
+    <a href="/birthdays" class="nav-item {% if request.path=='/birthdays' %}active{% endif %}"><span class="nav-icon">🎂</span>Birthdays</a>
+    <a href="/my-documents" class="nav-item {% if request.path=='/my-documents' %}active{% endif %}"><span class="nav-icon">📁</span>My Documents</a>
+    <a href="/change-pin" class="nav-item {% if request.path=='/change-pin' %}active{% endif %}"><span class="nav-icon">🔑</span>Change PIN</a>
+    <a href="/learning" class="nav-item {% if request.path.startswith('/learning') %}active{% endif %}"><span class="nav-icon">📚</span>Learning Hub</a>
+    <a href="/my-billing" class="nav-item {% if '/my-billing' in request.path %}active{% endif %}"><span class="nav-icon">💼</span>Billing Advice</a>
+    <a href="/notifications" class="nav-item {% if request.path=='/notifications' %}active{% endif %}"><span class="nav-icon">🔔</span>Notifications</a>
+    {% endif %}
+  </nav>
+  <div class="sidebar-footer">
+    {% if session.get('emp_id') or session.get('role') in ('admin','partner') %}
+    <a href="/notifications" id="notif-bell-link" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r-sm);color:var(--text-mid);text-decoration:none;font-size:13px;font-weight:600;transition:all .15s;position:relative;margin-bottom:4px;"
+       onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+      <span style="font-size:16px">🔔</span>
+      <span>Notifications</span>
+      <span id="notif-badge" style="display:none;background:#DC2626;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">0</span>
+    </a>
+    {% endif %}
+    <a href="/logout"><span>⟵</span>Sign Out</a>
+  </div>
+</aside>
+{% endif %}
+<div class="main-wrap">{% block content %}{% endblock %}</div>
+<div id="toast-container"></div>
+{% if session.get('emp_id') or session.get('role') in ('admin','partner') %}
+<span id="session-timeout-mins" data-mins="60" style="display:none"></span>
+{% endif %}
+<script src="/static/js/main.js"></script>
+{% if session.get('emp_id') or session.get('role') in ('admin','partner') %}
+<script>
+function updateBellBadge() {
+  fetch('/api/notifications/unread-count')
+    .then(r => r.json())
+    .then(d => {
+      const badge = document.getElementById('notif-badge');
+      if (!badge) return;
+      const count = d.count || 0;
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    })
+    .catch(() => {});
+}
+{% if session.get('role') == 'admin' %}
+function updateReimbBadge() {
+  fetch('/api/reimbursement/pending-count')
+    .then(r => r.json())
+    .then(d => {
+      const badge = document.getElementById('reimb-pending-badge');
+      if (!badge) return;
+      const count = d.count || 0;
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    })
+    .catch(() => {});
+}
+updateReimbBadge();
+setInterval(updateReimbBadge, 60000);
+{% endif %}
+// Initial load + poll every 60s
+updateBellBadge();
+setInterval(updateBellBadge, 60000);
+</script>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

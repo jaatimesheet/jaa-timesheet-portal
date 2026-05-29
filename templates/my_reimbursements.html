@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}My Reimbursements — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Status badges ───────────────────────────────────────────────────────── */
+.rbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 11px;font-size:11.5px;font-weight:700 }
+.rb-pending  { background:#FEF3C7;color:#92400E }
+.rb-approved { background:#D1FAE5;color:#065F46 }
+.rb-rejected { background:#FEE2E2;color:#991B1B }
+
+/* ── Reimbursement card ──────────────────────────────────────────────────── */
+.reimb-card {
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:10px;transition:box-shadow .15s;
+  position:relative;overflow:hidden;
+}
+.reimb-card::before { content:'';position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--rc,var(--border)) }
+.reimb-card.s-pending  { --rc:var(--gold) }
+.reimb-card.s-approved { --rc:#10B981 }
+.reimb-card.s-rejected { --rc:#DC2626 }
+
+.reimb-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px }
+.reimb-title { font-size:14.5px;font-weight:700;color:var(--navy) }
+.reimb-amount { font-family:'DM Serif Display',serif;font-size:18px;color:var(--navy);white-space:nowrap }
+.reimb-meta  { display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-light) }
+.meta-item   { display:flex;align-items:center;gap:4px }
+.rejection-note {
+  background:#FFF5F5;border:1px solid #FECACA;border-radius:var(--r-sm);
+  padding:9px 12px;margin-top:10px;font-size:13px;color:#991B1B;
+  display:flex;align-items:flex-start;gap:8px;
+}
+
+/* ── Pending card action buttons ─────────────────────────────────────────── */
+.pending-actions { display:flex;align-items:center;gap:6px;margin-top:6px;justify-content:flex-end }
+.btn-icon {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;
+  border:1.5px solid;cursor:pointer;transition:all .15s;background:#fff;
+}
+.btn-edit   { border-color:#6366F1;color:#6366F1 }
+.btn-edit:hover   { background:#EEF2FF }
+.btn-delete { border-color:#DC2626;color:#DC2626 }
+.btn-delete:hover { background:#FEF2F2 }
+
+/* ── Section header ──────────────────────────────────────────────────────── */
+.sec-hdr { display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--border) }
+.sec-hdr h3 { font-size:15px;font-weight:700;color:var(--navy);margin:0 }
+.sec-count { background:var(--surface);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;color:var(--text-mid) }
+
+/* ── Submit / Edit modal ─────────────────────────────────────────────────── */
+.modal.reimb-modal { width:560px;max-width:96vw }
+.reimb-modal .modal-header { background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:16px 16px 0 0;border-bottom:none }
+.reimb-modal .modal-title  { color:#fff }
+.reimb-modal .modal-close  { background:rgba(255,255,255,.12);color:#fff }
+.reimb-modal .modal-close:hover { background:rgba(255,255,255,.22) }
+
+.amount-display {
+  font-family:'DM Serif Display',serif;font-size:28px;color:var(--navy);
+  text-align:center;padding:12px;background:var(--surface);
+  border-radius:var(--r-sm);border:1.5px solid var(--border);margin-bottom:4px;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#mr-toast {
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:11px 18px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;
+  background:var(--navy);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+#mr-toast.show { opacity:1 }
+#mr-toast.ok  { background:#065F46 }
+#mr-toast.err { background:#991B1B }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Reimbursements</span>
+  <button class="btn btn-gold" onclick="openSubmitModal()">➕ Submit Reimbursement</button>
+</div>
+
+<div class="page-content">
+
+  {% set pending  = reimbs | selectattr('status','equalto','Pending')  | list %}
+  {% set approved = reimbs | selectattr('status','equalto','Approved') | list %}
+  {% set rejected = reimbs | selectattr('status','equalto','Rejected') | list %}
+
+  <!-- Pending -->
+  <div class="sec-hdr">
+    <h3>🕐 Pending</h3>
+    <span class="sec-count">{{ pending|length }}</span>
+  </div>
+  {% if pending %}
+    {% for r in pending %}
+    <div class="reimb-card s-pending" id="rcard-{{ r.id }}">
+      <div class="reimb-head">
+        <div>
+          <div class="reimb-title">{{ r.category }}{% if r.sub_category %} · {{ r.sub_category }}{% endif %}</div>
+          <div class="reimb-meta" style="margin-top:4px">
+            <span class="meta-item">🏢 {{ r.company_name }}</span>
+            <span class="meta-item">📅 {{ r.submitted_at[:10] }}</span>
+            {% if r.receipt_path %}<span class="meta-item"><a href="/reimbursements/receipt/{{ r.id }}" target="_blank" style="color:var(--teal);font-weight:600">📎 View Receipt</a></span>{% endif %}
+          </div>
+          {% if r.description %}<div style="font-size:12.5px;color:var(--text-mid);margin-top:5px">{{ r.description }}</div>{% endif %}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="reimb-amount">₹{{ "%.2f"|format(r.amount) }}</div>
+          <span class="rbadge rb-pending" style="margin-top:4px;display:inline-flex">Pending</span>
+          <div class="pending-actions">
+            <button class="btn-icon btn-edit"
+              onclick="openEditModal({{ r.id }},'{{ r.company_code }}','{{ r.category }}','{{ r.sub_category or '' }}',{{ r.amount }},'{{ (r.description or '')|replace("'","\\'") }}')">
+              ✏ Edit
+            </button>
+            <button class="btn-icon btn-delete" onclick="deleteReimb({{ r.id }})">
+              🗑 Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="padding:20px 0;text-align:center;color:var(--text-light);font-size:13px">No pending reimbursements.</div>
+  {% endif %}
+
+  <!-- Approved -->
+  <div class="sec-hdr">
+    <h3>✅ Approved</h3>
+    <span class="sec-count">{{ approved|length }}</span>
+  </div>
+  {% if approved %}
+    {% for r in approved %}
+    <div class="reimb-card s-approved">
+      <div class="reimb-head">
+        <div>
+          <div class="reimb-title">{{ r.category }}{% if r.sub_category %} · {{ r.sub_category }}{% endif %}</div>
+          <div class="reimb-meta" style="margin-top:4px">
+            <span class="meta-item">🏢 {{ r.company_name }}</span>
+            <span class="meta-item">📅 {{ r.submitted_at[:10] }}</span>
+            {% if r.billed %}<span class="meta-item" style="color:#065F46;font-weight:700">✓ Billed</span>{% endif %}
+            {% if r.receipt_path %}<span class="meta-item"><a href="/reimbursements/receipt/{{ r.id }}" target="_blank" style="color:var(--teal);font-weight:600">📎 Receipt</a></span>{% endif %}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="reimb-amount">₹{{ "%.2f"|format(r.amount) }}</div>
+          <span class="rbadge rb-approved" style="margin-top:4px;display:inline-flex">Approved</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="padding:20px 0;text-align:center;color:var(--text-light);font-size:13px">No approved reimbursements yet.</div>
+  {% endif %}
+
+  <!-- Rejected -->
+  <div class="sec-hdr">
+    <h3>❌ Rejected</h3>
+    <span class="sec-count">{{ rejected|length }}</span>
+  </div>
+  {% if rejected %}
+    {% for r in rejected %}
+    <div class="reimb-card s-rejected">
+      <div class="reimb-head">
+        <div>
+          <div class="reimb-title">{{ r.category }}{% if r.sub_category %} · {{ r.sub_category }}{% endif %}</div>
+          <div class="reimb-meta" style="margin-top:4px">
+            <span class="meta-item">🏢 {{ r.company_name }}</span>
+            <span class="meta-item">📅 {{ r.submitted_at[:10] }}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="reimb-amount">₹{{ "%.2f"|format(r.amount) }}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-top:4px">
+            <span class="rbadge rb-rejected">Rejected</span>
+            <button class="btn btn-sm btn-gold"
+              onclick="openResubmit('{{ r.company_code }}','{{ r.category }}','{{ r.sub_category or '' }}','{{ r.amount }}','{{ (r.description or '')|replace("'","\\'") }}')">
+              Resubmit →
+            </button>
+          </div>
+        </div>
+      </div>
+      {% if r.rejection_note %}
+      <div class="rejection-note">⚠ <span><strong>Rejection reason:</strong> {{ r.rejection_note }}</span></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="padding:20px 0;text-align:center;color:var(--text-light);font-size:13px">No rejected reimbursements.</div>
+  {% endif %}
+
+  {% if not reimbs %}
+  <div style="text-align:center;padding:60px 20px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">
+    <div style="font-size:40px;margin-bottom:12px">💸</div>
+    <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:6px">No reimbursements yet</div>
+    <div style="font-size:13.5px;color:var(--text-light)">Submit your first reimbursement using the button above.</div>
+  </div>
+  {% endif %}
+
+</div><!-- /page-content -->
+
+
+<!-- ── Submit / Edit Modal ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="reimb-overlay">
+  <div class="modal reimb-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-mode-title">➕ Submit Reimbursement</div>
+      <button class="modal-close" onclick="closeReimbModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Company *</label>
+        <select id="r-company" class="form-control">
+          <option value="">— Select company —</option>
+          {% for co in companies %}
+          <option value="{{ co.unique_code }}">{{ co.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select id="r-category" class="form-control" onchange="toggleSubCat()">
+            <option value="">— Select —</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" id="subcat-group" style="display:none">
+          <label class="form-label">Sub-Category *</label>
+          <select id="r-subcat" class="form-control">
+            <option value="">— Select —</option>
+            {% for sc in subcategories %}
+            <option value="{{ sc }}">{{ sc }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₹) *</label>
+        <input type="number" id="r-amount" class="form-control"
+               min="0.01" step="0.01" placeholder="0.00"
+               oninput="updateAmtDisplay()">
+        <div class="amount-display" id="amt-display" style="margin-top:8px">₹0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="r-desc" class="form-control" rows="2"
+                  style="resize:vertical;height:auto"
+                  placeholder="Brief note about this expense…"></textarea>
+      </div>
+      <div class="form-group" id="receipt-group">
+        <label class="form-label">Receipt (optional — PDF / JPG / PNG)</label>
+        <input type="file" id="r-receipt" class="form-control"
+               accept=".pdf,.jpg,.jpeg,.png"
+               style="padding:8px">
+      </div>
+      <div id="r-error" style="color:#991B1B;font-size:13px;margin-bottom:6px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeReimbModal()">Cancel</button>
+      <button class="btn btn-gold" id="r-submit-btn" onclick="submitReimb()">Submit →</button>
+    </div>
+  </div>
+</div>
+
+<div id="mr-toast"></div>
+
+<script>
+/* ── State ─────────────────────────────────────────────────────────────────── */
+let _editingId = null;  // null = new submission, number = editing existing
+
+/* ── Helpers ───────────────────────────────────────────────────────────────── */
+function toggleSubCat(){
+  const cat = document.getElementById('r-category').value;
+  const grp = document.getElementById('subcat-group');
+  grp.style.display = cat === 'Travel/Conveyance' ? 'block' : 'none';
+  if (cat !== 'Travel/Conveyance') document.getElementById('r-subcat').value = '';
+}
+
+function updateAmtDisplay(){
+  const v = parseFloat(document.getElementById('r-amount').value) || 0;
+  document.getElementById('amt-display').textContent =
+    '₹' + v.toLocaleString('en-IN', {minimumFractionDigits:2});
+}
+
+function _resetForm(){
+  _editingId = null;
+  document.getElementById('r-company').value  = '';
+  document.getElementById('r-category').value = '';
+  document.getElementById('r-subcat').value   = '';
+  document.getElementById('r-amount').value   = '';
+  document.getElementById('r-desc').value     = '';
+  document.getElementById('r-receipt').value  = '';
+  document.getElementById('amt-display').textContent = '₹0.00';
+  document.getElementById('r-error').style.display   = 'none';
+  document.getElementById('subcat-group').style.display = 'none';
+  document.getElementById('receipt-group').style.display = 'block';
+  document.getElementById('r-submit-btn').textContent = 'Submit →';
+  document.getElementById('r-submit-btn').disabled = false;
+}
+
+/* ── Open modals ───────────────────────────────────────────────────────────── */
+function openSubmitModal(){
+  _resetForm();
+  document.getElementById('modal-mode-title').textContent = '➕ Submit Reimbursement';
+  document.getElementById('reimb-overlay').classList.add('open');
+}
+
+function openResubmit(co, cat, subcat, amount, desc){
+  _resetForm();
+  document.getElementById('modal-mode-title').textContent = '🔄 Resubmit Reimbursement';
+  document.getElementById('r-company').value  = co;
+  document.getElementById('r-category').value = cat;
+  toggleSubCat();
+  document.getElementById('r-subcat').value   = subcat;
+  document.getElementById('r-amount').value   = amount;
+  document.getElementById('r-desc').value     = desc;
+  updateAmtDisplay();
+  document.getElementById('reimb-overlay').classList.add('open');
+}
+
+function openEditModal(id, co, cat, subcat, amount, desc){
+  _resetForm();
+  _editingId = id;
+  document.getElementById('modal-mode-title').textContent = '✏ Edit Reimbursement';
+  document.getElementById('r-company').value  = co;
+  document.getElementById('r-category').value = cat;
+  toggleSubCat();
+  document.getElementById('r-subcat').value   = subcat;
+  document.getElementById('r-amount').value   = amount;
+  document.getElementById('r-desc').value     = desc;
+  updateAmtDisplay();
+  // Hide receipt for edits (receipt stays as-is)
+  document.getElementById('receipt-group').style.display = 'none';
+  document.getElementById('r-submit-btn').textContent = 'Save Changes →';
+  document.getElementById('reimb-overlay').classList.add('open');
+}
+
+/* ── Close — use unique name to avoid conflict with main.js closeModal(id) ── */
+function closeReimbModal(){
+  document.getElementById('reimb-overlay').classList.remove('open');
+}
+
+// Close on overlay background click
+document.getElementById('reimb-overlay').addEventListener('click', function(e){
+  if (e.target === this) closeReimbModal();
+});
+
+// Close on Escape (only when this modal is open, won't break other pages)
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.getElementById('reimb-overlay').classList.contains('open'))
+    closeReimbModal();
+});
+
+/* ── Submit / Save ─────────────────────────────────────────────────────────── */
+function submitReimb(){
+  const errEl  = document.getElementById('r-error');
+  const btn    = document.getElementById('r-submit-btn');
+  const co     = document.getElementById('r-company').value;
+  const cat    = document.getElementById('r-category').value;
+  const subcat = document.getElementById('r-subcat').value;
+  const amt    = document.getElementById('r-amount').value;
+  const desc   = document.getElementById('r-desc').value.trim();
+
+  if(!co||!cat||!amt){ errEl.textContent='Company, category and amount are required.'; errEl.style.display='block'; return; }
+  if(parseFloat(amt)<=0){ errEl.textContent='Amount must be greater than 0.'; errEl.style.display='block'; return; }
+  if(cat==='Travel/Conveyance'&&!subcat){ errEl.textContent='Sub-category is required for Travel/Conveyance.'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+
+  // ── Prevent double-submit ──
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = _editingId ? 'Saving…' : 'Submitting…';
+
+  if (_editingId) {
+    // ── EDIT MODE: send JSON ──
+    fetch('/api/reimbursement/update', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        reimb_id: _editingId,
+        company_code: co, category: cat,
+        sub_category: subcat, amount: parseFloat(amt), description: desc
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if(d.ok){
+        showToast('✓ Reimbursement updated!');
+        closeReimbModal();
+        setTimeout(() => location.reload(), 700);
+      } else {
+        errEl.textContent = d.error || 'Update failed.';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = origText;
+      }
+    })
+    .catch(() => {
+      errEl.textContent = 'Network error.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = origText;
+    });
+
+  } else {
+    // ── SUBMIT MODE: send FormData (supports file upload) ──
+    const file = document.getElementById('r-receipt').files[0];
+    const fd = new FormData();
+    fd.append('company_code', co);
+    fd.append('category', cat);
+    fd.append('sub_category', subcat);
+    fd.append('amount', amt);
+    fd.append('description', desc);
+    if(file) fd.append('receipt', file);
+
+    fetch('/api/reimbursement/submit', {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => {
+      if(d.ok){
+        showToast('✓ Reimbursement submitted!');
+        closeReimbModal();
+        setTimeout(() => location.reload(), 700);
+      } else {
+        errEl.textContent = d.error || 'Submission failed.';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = origText;
+      }
+    })
+    .catch(() => {
+      errEl.textContent = 'Network error.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = origText;
+    });
+  }
+}
+
+/* ── Delete ────────────────────────────────────────────────────────────────── */
+function deleteReimb(id){
+  if(!confirm('Delete this pending reimbursement? This cannot be undone.')) return;
+  fetch('/api/reimbursement/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({reimb_id: id})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.ok){
+      showToast('✓ Reimbursement deleted.');
+      const card = document.getElementById('rcard-' + id);
+      if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(()=>{ card.remove(); }, 350); }
+    } else {
+      showToast('✗ ' + (d.error || 'Delete failed.'), 'err');
+    }
+  })
+  .catch(() => showToast('✗ Network error.', 'err'));
+}
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+function showToast(msg, type='ok'){
+  const t = document.getElementById('mr-toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3000);
+}
+</script>
+{% endblock %}

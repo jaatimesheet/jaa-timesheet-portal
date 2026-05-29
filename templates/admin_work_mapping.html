@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Work Mapping — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Work Mapping Manager</span>
+  <span class="topbar-sub">Categories · Areas · Sub-Categories</span>
+  <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('add-cat-modal')">➕ Add Category</button>
+</div>
+<div class="page-content">
+
+  {% for cat_name, areas in mapping.items() %}
+  {% set cat_obj = cats | selectattr('name','equalto',cat_name) | first %}
+  <div class="card mb-6">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="card-title">📁 {{ cat_name }}</span>
+        <span class="badge badge-navy">{{ areas|length }} areas</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm"
+                onclick="openAddArea('{{ cat_name | e }}')">➕ Add Area</button>
+        <button class="btn btn-ghost btn-sm"
+                onclick="renameCategory('{{ cat_name | e }}')">✏ Rename</button>
+        <button class="btn btn-danger btn-sm"
+                onclick="deleteCategory('{{ cat_name | e }}')">🗑 Delete</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      {% if areas %}
+      {% for area_name, subs in areas.items() %}
+      <div style="border-bottom:1px solid var(--border);padding:12px 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-weight:600;font-size:13.5px">📂 {{ area_name }}</span>
+            <span class="badge badge-gray">{{ subs|length }} subs</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm"
+                    onclick="openAddSub('{{ cat_name | e }}','{{ area_name | e }}')">➕ Sub</button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="renameArea('{{ cat_name | e }}','{{ area_name | e }}')">✏</button>
+            <button class="btn btn-danger btn-sm"
+                    onclick="deleteArea('{{ cat_name | e }}','{{ area_name | e }}')">🗑</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:12px">
+          {% for sub in subs %}
+          <span class="badge badge-info" style="font-size:12px;display:inline-flex;align-items:center;gap:4px">
+            {{ sub }}
+            <button onclick="renameSub('{{ cat_name | e }}','{{ area_name | e }}','{{ sub | e }}')"
+                    style="background:none;border:none;color:inherit;cursor:pointer;font-size:11px;padding:0 2px;line-height:1" title="Rename">✏</button>
+            <button onclick="deleteSub('{{ cat_name | e }}','{{ area_name | e }}','{{ sub | e }}')"
+                    style="background:none;border:none;color:inherit;cursor:pointer;font-size:14px;padding:0;line-height:1" title="Delete">×</button>
+          </span>
+          {% endfor %}
+          {% if not subs %}
+          <span style="font-size:12px;color:var(--text-light);font-style:italic">No sub-categories yet</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="padding:16px 20px;color:var(--text-light);font-size:13.5px">No areas yet — add one above.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not mapping %}
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:40px;color:var(--text-light)">
+      No work categories yet. Click "Add Category" to get started.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="add-cat-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Work Category</span>
+      <button class="modal-close" onclick="closeModal('add-cat-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Category Name *</label>
+        <input class="form-control" id="new-cat-name" placeholder="e.g. Audit, Tax, Advisory">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-cat-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCategory()">➕ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Area Modal -->
+<div class="modal-overlay" id="add-area-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Operational Area</span>
+      <button class="modal-close" onclick="closeModal('add-area-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input class="form-control" id="area-cat" readonly style="background:var(--surface)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Area Name *</label>
+        <input class="form-control" id="new-area-name" placeholder="e.g. Statutory Audit, Tax Filing">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-area-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addArea()">➕ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Sub-Category Modal -->
+<div class="modal-overlay" id="add-sub-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Sub-Category</span>
+      <button class="modal-close" onclick="closeModal('add-sub-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input class="form-control" id="sub-cat" readonly style="background:var(--surface)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Area</label>
+          <input class="form-control" id="sub-area" readonly style="background:var(--surface)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-Category Name *</label>
+        <input class="form-control" id="new-sub-name" placeholder="e.g. Planning, Fieldwork, Reporting">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-sub-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addSub()">➕ Add</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Store area IDs for delete operations
+const areaMap = {};
+
+async function loadAreaIds() {
+  try {
+    const cats = await fetch('/api/mapping/categories').then(r=>r.json());
+    for (const cat of cats) {
+      const areas = await fetch('/api/mapping/areas/'+encodeURIComponent(cat.name)).then(r=>r.json());
+      if (Array.isArray(areas)) {
+        areas.forEach(a => { areaMap[cat.name + '::' + a.name] = a.id; });
+      }
+    }
+  } catch(e) { console.error('loadAreaIds failed', e); }
+}
+// Load immediately and also after a short delay to ensure DB is ready
+loadAreaIds();
+setTimeout(loadAreaIds, 1500);
+
+function openAddArea(cat) {
+  document.getElementById('area-cat').value = cat;
+  document.getElementById('new-area-name').value = '';
+  openModal('add-area-modal');
+}
+
+function openAddSub(cat, area) {
+  document.getElementById('sub-cat').value  = cat;
+  document.getElementById('sub-area').value = area;
+  document.getElementById('new-sub-name').value = '';
+  openModal('add-sub-modal');
+}
+
+async function addCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!name) { toast('Name required.','warning'); return; }
+  const r = await api('/api/mapping/add-category', {name});
+  if (r.ok) { toast('Category added!','success'); closeModal('add-cat-modal'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed — already exists?','error'); }
+}
+
+async function addArea() {
+  const cat  = document.getElementById('area-cat').value;
+  const name = document.getElementById('new-area-name').value.trim();
+  if (!name) { toast('Name required.','warning'); return; }
+  const r = await api('/api/mapping/add-area', {category: cat, name});
+  if (r.ok) { toast('Area added!','success'); closeModal('add-area-modal'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed.','error'); }
+}
+
+async function addSub() {
+  const cat  = document.getElementById('sub-cat').value;
+  const area = document.getElementById('sub-area').value;
+  const name = document.getElementById('new-sub-name').value.trim();
+  if (!name) { toast('Name required.','warning'); return; }
+  const r = await api('/api/mapping/add-sub', {category: cat, area, name});
+  if (r.ok) { toast('Sub-category added!','success'); closeModal('add-sub-modal'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed.','error'); }
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`Delete category "${name}" and ALL its areas/sub-categories? This cannot be undone.`)) return;
+  const r = await api('/api/mapping/delete-category', {name});
+  if (r.ok) { toast('Deleted!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+
+async function deleteArea(cat, area) {
+  const areaId = areaMap[cat + '::' + area];
+  if (!areaId) { toast('Could not find area ID. Refresh and try again.','error'); return; }
+  if (!confirm(`Delete area "${area}" and all its sub-categories?`)) return;
+  const r = await api('/api/mapping/delete-area', {area_id: areaId});
+  if (r.ok) { toast('Area deleted!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+
+async function renameCategory(name) {
+  const newName = prompt(`Rename category "${name}" to:`, name);
+  if (!newName || newName.trim() === name) return;
+  const r = await api('/api/mapping/rename-category', {old_name: name, new_name: newName.trim()});
+  if (r.ok) { toast('Renamed!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+
+async function renameArea(cat, area) {
+  const newName = prompt(`Rename area "${area}" to:`, area);
+  if (!newName || newName.trim() === area) return;
+  const areaId = areaMap[cat + '::' + area];
+  if (!areaId) { toast('Area ID not found. Refresh and try again.','error'); return; }
+  const r = await api('/api/mapping/rename-area', {area_id: areaId, new_name: newName.trim()});
+  if (r.ok) { toast('Renamed!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+
+async function renameSub(cat, area, sub) {
+  const newName = prompt(`Rename sub-category "${sub}" to:`, sub);
+  if (!newName || newName.trim() === sub) return;
+  const areas = await fetch('/api/mapping/subs/'+encodeURIComponent(cat)+'/'+encodeURIComponent(area)).then(r=>r.json());
+  const subObj = areas.find(s => s.name === sub);
+  if (!subObj) { toast('Sub not found.','error'); return; }
+  const r = await api('/api/mapping/rename-sub', {sub_id: subObj.id, new_name: newName.trim()});
+  if (r.ok) { toast('Renamed!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+
+async function deleteSub(cat, area, sub) {
+  const areas = await fetch('/api/mapping/subs/'+encodeURIComponent(cat)+'/'+encodeURIComponent(area)).then(r=>r.json());
+  const subObj = areas.find(s => s.name === sub);
+  if (!subObj) { toast('Could not find sub-category.','error'); return; }
+  if (!confirm(`Delete sub-category "${sub}"?`)) return;
+  const r = await api('/api/mapping/delete-sub', {sub_id: subObj.id});
+  if (r.ok) { toast('Deleted!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast(r.msg||'Failed.','error'); }
+}
+</script>
+{% endblock %}

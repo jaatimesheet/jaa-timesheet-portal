@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}{{ mat.title }} — Learning Hub{% endblock %}
+{% block content %}
+<div class="topbar">
+  <a href="/learning" class="btn btn-ghost btn-sm">← Back</a>
+  <span class="topbar-title" style="margin-left:12px">{{ mat.title }}</span>
+  {% if is_admin %}
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('edit-modal')">✏ Edit</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteMat()">🗑 Delete</button>
+  </div>
+  {% endif %}
+</div>
+
+<div class="page-content" style="max-width:900px">
+
+  <!-- Meta card -->
+  <div class="card mb-6">
+    <div class="card-body" style="padding:20px 24px">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Category</div>
+          <span class="badge badge-navy">{{ mat.category or '—' }}</span>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Type</div>
+          <span class="badge badge-info">{{ mat.material_type }}</span>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Priority</div>
+          <span class="badge {{ 'badge-danger' if mat.priority=='High' else 'badge-gray' }}">{{ mat.priority or 'Normal' }}</span>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Views</div>
+          <span style="font-weight:600">👁 {{ mat.view_count or 0 }}</span>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Uploaded</div>
+          <span style="font-size:13px;color:var(--text-mid)">{{ mat.upload_date or '—' }}</span>
+        </div>
+        {% if mat.expiry_date %}
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Expires</div>
+          <span style="font-size:13px;color:var(--danger);font-weight:600">{{ mat.expiry_date }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% if mat.description %}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:14px;color:var(--text-mid);line-height:1.6">{{ mat.description }}</div>
+      {% endif %}
+      {% if mat.tags %}
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+        {% for tag in mat.tags.split(',') %}
+        <span style="font-size:12px;background:var(--surface);color:var(--text-mid);border:1px solid var(--border);border-radius:20px;padding:3px 10px">{{ tag.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Content area -->
+  {% if mat.material_type == 'YouTube' and mat.youtube_url %}
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">▶️ Video</span></div>
+    <div class="card-body">
+      {% set yt_id = mat.youtube_url.split('v=')[-1].split('&')[0] if 'v=' in mat.youtube_url else mat.youtube_url.split('/')[-1] %}
+      <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px">
+        <iframe src="https://www.youtube.com/embed/{{ yt_id }}"
+                style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px"
+                allowfullscreen></iframe>
+      </div>
+      <a href="{{ mat.youtube_url }}" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:12px">🔗 Open on YouTube</a>
+    </div>
+  </div>
+
+  {% elif mat.material_type in ['Article','Notice'] and article_body %}
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">✍️ {{ mat.material_type }}</span></div>
+    <div class="card-body" style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap">{{ article_body }}</div>
+  </div>
+
+  {% elif mat.file_path %}
+  <div class="card mb-6">
+    <div class="card-header">
+      <span class="card-title">📎 File</span>
+      <a href="/learning/file/{{ mat.id }}" class="btn btn-primary btn-sm" target="_blank">⬇ Download / Open</a>
+    </div>
+    {% if mat.material_type == 'PDF' %}
+    <div style="padding:0">
+      <iframe src="/learning/file/{{ mat.id }}" style="width:100%;height:680px;border:none;border-radius:0 0 12px 12px"></iframe>
+    </div>
+    {% else %}
+    <div class="card-body" style="text-align:center;padding:32px">
+      <div style="font-size:48px;margin-bottom:12px">
+        {% if mat.material_type == 'PPTX' %}📊{% elif mat.material_type == 'DOCX' %}📝{% elif mat.material_type == 'Excel' %}📗{% else %}📎{% endif %}
+      </div>
+      <div style="font-size:14px;color:var(--text-mid);margin-bottom:16px">{{ mat.file_path.split('/')[-1] if mat.file_path else '' }}</div>
+      <a href="/learning/file/{{ mat.id }}" class="btn btn-primary" target="_blank">⬇ Download File</a>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="card mb-6">
+    <div class="card-body" style="text-align:center;padding:32px;color:var(--text-light)">No content available for this material.</div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% if is_admin %}
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal" style="width:600px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title">✏ Edit Material</span>
+      <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" value="{{ mat.id }}">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input class="form-control" id="edit-title" value="{{ mat.title }}">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" id="edit-cat">
+            {% for c in cats %}<option value="{{ c.name }}" {{ 'selected' if c.name==mat.category }}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-control" id="edit-priority">
+            <option {{ 'selected' if mat.priority=='Normal' }}>Normal</option>
+            <option {{ 'selected' if mat.priority=='High' }}>High</option>
+            <option {{ 'selected' if mat.priority=='Low' }}>Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-control" id="edit-desc" value="{{ mat.description or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <input class="form-control" id="edit-tags" value="{{ mat.tags or '' }}">
+      </div>
+      {% if mat.material_type in ['Article','Notice'] %}
+      <div class="form-group">
+        <label class="form-label">Article Content</label>
+        <textarea class="form-control" id="edit-article" rows="8" style="font-family:monospace;resize:vertical">{{ article_body }}</textarea>
+      </div>
+      {% endif %}
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Expiry Date</label>
+          <input type="date" class="form-control" id="edit-expiry" value="{{ mat.expiry_date or '' }}">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px">
+          <input type="checkbox" id="edit-pinned" {{ 'checked' if mat.is_pinned }}>
+          <label for="edit-pinned" style="font-weight:600;color:var(--text-mid)">📌 Pin to top</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+{% if request.args.get('edit') and is_admin %}
+openModal('edit-modal');
+{% endif %}
+
+async function saveEdit() {
+  const d = {
+    id:           parseInt(document.getElementById('edit-id').value),
+    title:        document.getElementById('edit-title').value.trim(),
+    category:     document.getElementById('edit-cat').value,
+    priority:     document.getElementById('edit-priority').value,
+    description:  document.getElementById('edit-desc').value,
+    tags:         document.getElementById('edit-tags').value,
+    article_body: document.getElementById('edit-article') ? document.getElementById('edit-article').value : null,
+    expiry_date:  document.getElementById('edit-expiry').value,
+    is_pinned:    document.getElementById('edit-pinned').checked,
+  };
+  if (!d.title) { toast('Title required.','warning'); return; }
+  const r = await api('/api/learning/update', d);
+  if (r.ok) { toast('Saved!','success'); closeModal('edit-modal'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed.','error'); }
+}
+
+async function deleteMat() {
+  if (!confirm('Delete this material permanently?')) return;
+  const id = {{ mat.id }};
+  const r = await api('/api/learning/delete', {id});
+  if (r.ok) { toast('Deleted!','success'); setTimeout(()=>window.location.href='/learning',800); }
+  else       { toast('Failed.','error'); }
+}
+</script>
+{% endblock %}

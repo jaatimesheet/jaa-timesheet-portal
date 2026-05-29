@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Reports — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Reports</span>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <input type="date" id="start" class="form-control" style="width:150px;padding:7px 12px" value="{{ start }}">
+    <span style="color:var(--text-light)">to</span>
+    <input type="date" id="end" class="form-control" style="width:150px;padding:7px 12px" value="{{ end }}">
+    <button class="btn btn-primary btn-sm"
+      onclick="location.href='/admin/reports?start='+document.getElementById('start').value+'&end='+document.getElementById('end').value">
+      📊 Generate
+    </button>
+    <a class="btn btn-sm" style="background:#16a34a;color:#fff;border:none;text-decoration:none"
+       href="/admin/reports/export?start={{ start }}&end={{ end }}">
+      ⬇ Export Excel (All Sheets)
+    </a>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <!-- Summary Strip -->
+  <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="card" style="flex:1;min-width:160px;padding:18px 22px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:var(--navy)">{{ total_emps }}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">Active Employees</div>
+    </div>
+    <div class="card" style="flex:1;min-width:160px;padding:18px 22px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:var(--gold)">{{ total_hrs }}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">Total Hours Logged</div>
+    </div>
+    <div class="card" style="flex:1;min-width:160px;padding:18px 22px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:var(--teal)">{{ total_clients }}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">Clients Served</div>
+    </div>
+    <div class="card" style="flex:1;min-width:160px;padding:18px 22px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:#8b5cf6">{{ total_leaves }}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">Total Leave Days</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Productivity + Client Effort -->
+  <div class="grid-2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👤 Employee Productivity</span>
+        <span style="font-size:12px;color:var(--text-light)">{{ start }} → {{ end }}</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Employee</th><th>Role</th><th>Days</th><th>Total Hrs</th><th>Avg/Day</th><th>Target</th></tr></thead>
+        <tbody>
+          {% for r in productivity %}
+          {% set avg = (r.total_hrs|float / r.days_worked|float) if r.days_worked else 0 %}
+          <tr>
+            <td style="font-weight:600">{{ r.full_name }}</td>
+            <td><span style="font-size:11px;color:var(--text-light)">{{ r.role }}</span></td>
+            <td style="text-align:center">{{ r.days_worked }}</td>
+            <td style="font-weight:700;color:var(--gold);text-align:center">{{ '%.1f'|format(r.total_hrs|float) }}</td>
+            <td style="font-weight:600;text-align:center;color:{{ '#10B981' if avg>=daily_target else '#EF4444' }}">{{ '%.1f'|format(avg) }}h</td>
+            <td style="text-align:center">{% if avg>=daily_target %}<span class="badge badge-success">✔ Yes</span>{% else %}<span class="badge badge-danger">✘ No</span>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light)">No data for selected period.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">🏢 Client Effort</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Client</th><th>Entries</th><th>Total Hrs</th></tr></thead>
+        <tbody>
+          {% for r in client_effort %}
+          <tr>
+            <td style="font-weight:600">{{ r.client_name or '—' }}</td>
+            <td style="text-align:center">{{ r.entry_count }}</td>
+            <td style="font-weight:700;color:var(--teal);text-align:center">{{ '%.1f'|format(r.total_hrs|float) }}h</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-light)">No data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Work Category + Work Location -->
+  <div class="grid-2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-header"><span class="card-title">📂 Work Category Breakdown</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Category</th><th>Entries</th><th>Employees</th><th>Total Hrs</th></tr></thead>
+        <tbody>
+          {% for r in cat_report %}
+          <tr>
+            <td style="font-weight:600">{{ r.work_category }}</td>
+            <td style="text-align:center">{{ r.entry_count }}</td>
+            <td style="text-align:center">{{ r.emp_count }}</td>
+            <td style="font-weight:700;color:var(--gold);text-align:center">{{ r.total_hrs }}h</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-light)">No data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">📍 Work Location Breakdown</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Location</th><th>Entries</th><th>Employees</th><th>Total Hrs</th></tr></thead>
+        <tbody>
+          {% for r in location_report %}
+          <tr>
+            <td style="font-weight:600">{{ r.work_location or '—' }}</td>
+            <td style="text-align:center">{{ r.entry_count }}</td>
+            <td style="text-align:center">{{ r.emp_count }}</td>
+            <td style="font-weight:700;color:var(--teal);text-align:center">{{ r.total_hrs }}h</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-light)">No data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Leave Summary + Daily Submissions -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">🏖 Leave Summary</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Employee</th><th>Role</th><th>Total Days</th><th>Approved</th><th>Pending</th></tr></thead>
+        <tbody>
+          {% for r in leave_summary %}
+          <tr>
+            <td style="font-weight:600">{{ r.full_name }}</td>
+            <td style="font-size:11px;color:var(--text-light)">{{ r.role }}</td>
+            <td style="text-align:center;font-weight:700">{{ r.leave_days }}</td>
+            <td style="text-align:center"><span style="color:#16a34a;font-weight:600">{{ r.approved }}</span></td>
+            <td style="text-align:center"><span style="color:#f59e0b;font-weight:600">{{ r.pending }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light)">No leave data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">📅 Daily Submission Tracker</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Employees Submitted</th><th>Total Hrs</th></tr></thead>
+        <tbody>
+          {% for r in daily_sub %}
+          <tr>
+            <td style="font-weight:600">{{ r.entry_date }}</td>
+            <td style="text-align:center">{{ r.submitted }}</td>
+            <td style="font-weight:700;color:var(--gold);text-align:center">{{ r.total_hrs }}h</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-light)">No data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

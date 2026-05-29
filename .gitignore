@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+logs/
+Backups/
+data/*.db
+*.zip
+START_JAA.bat
+migrate_to_mumbai.py
+check_pin.py

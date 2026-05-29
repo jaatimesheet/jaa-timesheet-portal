@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Learning Hub — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">📚 Learning Hub</span>
+  <span class="topbar-sub">Resources, SOPs & Training Material</span>
+  {% if is_admin %}
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('add-cat-modal')">➕ Category</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('add-mat-modal')">➕ Add Material</button>
+  </div>
+  {% endif %}
+</div>
+
+<div class="page-content">
+
+  <!-- Filters -->
+  <div class="card mb-6">
+    <div class="card-body" style="padding:14px 20px">
+      <form method="GET" action="/learning" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <input type="text" name="q" value="{{ search }}" placeholder="🔍 Search title, tags, description..."
+               class="form-control" style="width:260px;padding:7px 12px">
+        <select name="cat" class="form-control" style="width:180px;padding:7px 12px">
+          <option value="All" {{ 'selected' if cat_sel=='All' }}>All Categories</option>
+          {% for c in cats %}<option value="{{ c.name }}" {{ 'selected' if cat_sel==c.name }}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+        </select>
+        <select name="type" class="form-control" style="width:150px;padding:7px 12px">
+          <option value="All" {{ 'selected' if type_sel=='All' }}>All Types</option>
+          {% for t in material_types %}<option value="{{ t }}" {{ 'selected' if type_sel==t }}>{{ t }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="/learning" class="btn btn-ghost btn-sm">Clear</a>
+        <span style="font-size:13px;color:var(--text-light);margin-left:4px">{{ materials|length }} result(s)</span>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category pills -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+    <a href="/learning" class="btn btn-sm {{ 'btn-primary' if cat_sel=='All' else 'btn-ghost' }}">All</a>
+    {% for c in cats %}
+    <a href="/learning?cat={{ c.name }}" class="btn btn-sm {{ 'btn-primary' if cat_sel==c.name else 'btn-ghost' }}">
+      {{ c.icon }} {{ c.name }}
+      {% if is_admin %}<span onclick="event.preventDefault();deleteCategory({{ c.id }},'{{ c.name }}')" style="margin-left:4px;color:var(--danger);font-size:14px;cursor:pointer" title="Delete">×</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Materials grid -->
+  {% if materials %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+    {% for m in materials %}
+    {% set type_icons = {'PDF':'📄','PPTX':'📊','DOCX':'📝','Excel':'📗','YouTube':'▶️','Article':'✍️','Notice':'📢','Other':'📎'} %}
+    {% set priority_colors = {'High':'var(--danger)','Normal':'var(--teal)','Low':'var(--text-light)'} %}
+    <div class="card" style="position:relative;{{ 'border-left:4px solid var(--gold)' if m.is_pinned else '' }}">
+      {% if m.is_pinned %}<span style="position:absolute;top:10px;right:10px;font-size:11px;background:var(--gold);color:var(--navy);border-radius:4px;padding:2px 7px;font-weight:700">📌 Pinned</span>{% endif %}
+      <div class="card-body" style="padding:16px 18px">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+          <span style="font-size:26px;line-height:1">{{ type_icons.get(m.material_type,'📎') }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:3px;word-wrap:break-word">{{ m.title }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="badge badge-navy" style="font-size:11px">{{ m.material_type }}</span>
+              <span class="badge badge-gray" style="font-size:11px">{{ m.category }}</span>
+              {% if m.priority and m.priority != 'Normal' %}
+              <span style="font-size:11px;color:{{ priority_colors.get(m.priority,'var(--text-light)') }};font-weight:600">● {{ m.priority }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% if m.description %}
+        <p style="font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.5">{{ m.description[:120] }}{% if m.description|length > 120 %}…{% endif %}</p>
+        {% endif %}
+        {% if m.tags %}
+        <div style="margin-bottom:10px">
+          {% for tag in m.tags.split(',') %}
+          <span style="font-size:11px;background:var(--surface);color:var(--text-mid);border:1px solid var(--border);border-radius:20px;padding:2px 8px;margin-right:4px">{{ tag.strip() }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text-light)">
+            👁 {{ m.view_count or 0 }} views · {{ m.upload_date or '' }}
+            {% if m.expiry_date %} · expires {{ m.expiry_date }}{% endif %}
+          </div>
+          <div style="display:flex;gap:6px">
+            <a href="/learning/{{ m.id }}" class="btn btn-primary btn-sm">View</a>
+            {% if is_admin %}
+            <button class="btn btn-ghost btn-sm" onclick="editMaterial({{ m.id }})">✏</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMaterial({{ m.id }})">🗑</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:48px;color:var(--text-light)">
+      <div style="font-size:48px;margin-bottom:12px">📚</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">No materials found</div>
+      <div style="font-size:13px">{% if search %}Try a different search term.{% else %}No materials in this category yet.{% endif %}</div>
+      {% if is_admin %}<button class="btn btn-primary" style="margin-top:16px" onclick="openModal('add-mat-modal')">➕ Add First Material</button>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="add-cat-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Category</span>
+      <button class="modal-close" onclick="closeModal('add-cat-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Icon (emoji)</label>
+          <input class="form-control" id="cat-icon" value="📂" maxlength="4" style="font-size:20px;text-align:center">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category Name *</label>
+          <input class="form-control" id="cat-name" placeholder="e.g. Income Tax">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-cat-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCategory()">➕ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Material Modal -->
+<div class="modal-overlay" id="add-mat-modal">
+  <div class="modal" style="width:640px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Learning Material</span>
+      <button class="modal-close" onclick="closeModal('add-mat-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input class="form-control" id="mat-title" placeholder="Material title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select class="form-control" id="mat-type" onchange="toggleTypeFields()">
+            {% for t in material_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" id="mat-cat">
+            {% for c in cats %}<option value="{{ c.name }}">{{ c.icon }} {{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-control" id="mat-priority">
+            <option>Normal</option><option>High</option><option>Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-control" id="mat-desc" placeholder="Brief description">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags (comma separated)</label>
+        <input class="form-control" id="mat-tags" placeholder="e.g. GST, filing, FY2026">
+      </div>
+      <!-- File upload -->
+      <div class="form-group" id="field-file">
+        <label class="form-label">Upload File (PDF, PPTX, DOCX, Excel)</label>
+        <input type="file" class="form-control" id="mat-file" accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.xls">
+      </div>
+      <!-- YouTube URL -->
+      <div class="form-group" id="field-youtube" style="display:none">
+        <label class="form-label">YouTube URL</label>
+        <input class="form-control" id="mat-youtube" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <!-- Article body -->
+      <div class="form-group" id="field-article" style="display:none">
+        <label class="form-label">Article Content</label>
+        <textarea class="form-control" id="mat-article" rows="8" placeholder="Write article content here..." style="font-family:monospace;resize:vertical"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Expiry Date (optional)</label>
+          <input type="date" class="form-control" id="mat-expiry">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px">
+          <input type="checkbox" id="mat-pinned">
+          <label for="mat-pinned" style="font-weight:600;color:var(--text-mid)">📌 Pin to top</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-mat-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitMaterial()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleTypeFields() {
+  const t = document.getElementById('mat-type').value;
+  document.getElementById('field-file').style.display     = ['PDF','PPTX','DOCX','Excel','Other'].includes(t) ? '' : 'none';
+  document.getElementById('field-youtube').style.display  = t === 'YouTube' ? '' : 'none';
+  document.getElementById('field-article').style.display  = ['Article','Notice'].includes(t) ? '' : 'none';
+}
+toggleTypeFields();
+
+async function addCategory() {
+  const name = document.getElementById('cat-name').value.trim();
+  const icon = document.getElementById('cat-icon').value.trim() || '📂';
+  if (!name) { toast('Name required.','warning'); return; }
+  const r = await api('/api/learning/add-category', {name, icon});
+  if (r.ok) { toast('Category added!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed.','error'); }
+}
+
+async function deleteCategory(id, name) {
+  if (!confirm(`Delete category "${name}"? Materials inside will still exist but lose their category.`)) return;
+  const r = await api('/api/learning/delete-category', {id});
+  if (r.ok) { toast('Deleted!','success'); setTimeout(()=>location.reload(),600); }
+}
+
+async function submitMaterial() {
+  const title = document.getElementById('mat-title').value.trim();
+  if (!title) { toast('Title required.','warning'); return; }
+  const type  = document.getElementById('mat-type').value;
+  const fd    = new FormData();
+  fd.append('title',        title);
+  fd.append('material_type',type);
+  fd.append('category',     document.getElementById('mat-cat').value);
+  fd.append('priority',     document.getElementById('mat-priority').value);
+  fd.append('description',  document.getElementById('mat-desc').value);
+  fd.append('tags',         document.getElementById('mat-tags').value);
+  fd.append('youtube_url',  document.getElementById('mat-youtube').value);
+  fd.append('article_body', document.getElementById('mat-article').value);
+  fd.append('expiry_date',  document.getElementById('mat-expiry').value);
+  fd.append('is_pinned',    document.getElementById('mat-pinned').checked ? '1' : '');
+  const fileInput = document.getElementById('mat-file');
+  if (fileInput.files[0]) fd.append('file', fileInput.files[0]);
+  const r = await fetch('/api/learning/add', {method:'POST', body:fd}).then(x=>x.json());
+  if (r.ok) { toast('Material added!','success'); closeModal('add-mat-modal'); setTimeout(()=>location.reload(),800); }
+  else       { toast('Failed.','error'); }
+}
+
+async function editMaterial(id) {
+  window.location.href = '/learning/' + id + '?edit=1';
+}
+
+async function deleteMaterial(id) {
+  if (!confirm('Delete this material? This cannot be undone.')) return;
+  const r = await api('/api/learning/delete', {id});
+  if (r.ok) { toast('Deleted!','success'); setTimeout(()=>location.reload(),600); }
+  else       { toast('Failed.','error'); }
+}
+</script>
+{% endblock %}

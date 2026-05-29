@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Documents — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">📁 My Documents</span>
+  <span class="topbar-sub">T1 joining form · T5 completion form</span>
+</div>
+<div class="page-content" style="max-width:700px">
+  <div class="grid-2">
+    <!-- T1 Card -->
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:32px 24px">
+        <div style="font-size:48px;margin-bottom:12px">📄</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">T1 — Joining Form</div>
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:20px">
+          Internship commencement document
+        </div>
+        {% if info.t1_exists %}
+        <span class="badge badge-success" style="font-size:13px;padding:6px 14px;margin-bottom:16px;display:inline-block">✓ Uploaded</span><br>
+        <a href="/my-documents/view/t1" target="_blank" class="btn btn-primary">👁 View My T1</a>
+        {% else %}
+        <span class="badge badge-gray" style="font-size:13px;padding:6px 14px;margin-bottom:16px;display:inline-block">Not uploaded yet</span><br>
+        <div style="font-size:12px;color:var(--text-light)">Please contact Admin to upload your T1 form.</div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- T5 Card -->
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:32px 24px">
+        <div style="font-size:48px;margin-bottom:12px">📋</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">T5 — Completion Form</div>
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:20px">
+          Internship completion document
+        </div>
+        {% if info.t5_exists %}
+        <span class="badge badge-success" style="font-size:13px;padding:6px 14px;margin-bottom:16px;display:inline-block">✓ Uploaded</span><br>
+        <a href="/my-documents/view/t5" target="_blank" class="btn btn-primary">👁 View My T5</a>
+        {% else %}
+        <span class="badge badge-gray" style="font-size:13px;padding:6px 14px;margin-bottom:16px;display:inline-block">Not uploaded yet</span><br>
+        <div style="font-size:12px;color:var(--text-light)">Uploaded when internship is completed.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

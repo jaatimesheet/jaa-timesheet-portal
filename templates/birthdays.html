@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Birthdays — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">🎂 Birthdays</span>
+  <span class="topbar-sub">Team birthday calendar</span>
+</div>
+<div class="page-content">
+  <div class="grid-2 mb-6">
+    <div class="card">
+      <div class="card-header"><span class="card-title">🎉 Upcoming — Next 30 Days</span></div>
+      <div class="card-body" style="padding:0">
+        {% if upcoming %}
+        <table>
+          <tbody>
+            {% for emp in upcoming %}
+            {% set mm, dd = emp.date_of_birth.split('-') %}
+            <tr style="{{ 'background:#FFFBEB' if emp.date_of_birth==today_mmd else '' }}">
+              <td style="width:50px;text-align:center;font-size:20px">
+                {{ '🎂' if emp.date_of_birth==today_mmd else '🎁' }}
+              </td>
+              <td>
+                <div style="font-weight:600">{{ emp.full_name }}</div>
+                <div style="font-size:12px;color:var(--text-light)">{{ emp.get('role','') }}</div>
+              </td>
+              <td style="color:var(--teal);font-weight:600">
+                {{ dd }} {{ month_names[mm|int] }}
+              </td>
+              <td>
+                {% if emp.days_away == 0 %}<span class="badge badge-gold">🎂 TODAY!</span>
+                {% elif emp.days_away == 1 %}<span class="badge badge-success">Tomorrow</span>
+                {% else %}<span class="badge badge-gray">in {{ emp.days_away }} days</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:28px;text-align:center;color:var(--text-light)">No birthdays in the next 30 days.</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card" style="max-height:520px;overflow-y:auto">
+      <div class="card-header" style="position:sticky;top:0;z-index:1;background:var(--panel)">
+        <span class="card-title">📅 Full List by Month</span>
+      </div>
+      {% for mm in by_month.keys()|sort %}
+      <div style="padding:8px 16px 0">
+        <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:1px;padding:10px 0 6px;border-bottom:1px solid var(--border)">
+          {{ month_names[mm] }}
+        </div>
+        {% for emp in by_month[mm] %}
+        {% set mms, dds = emp.date_of_birth.split('-') %}
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);{{ 'background:#FFFBEB' if emp.date_of_birth==today_mmd else '' }}">
+          <span style="font-size:12px;font-weight:700;color:var(--teal);width:50px">{{ dds }} {{ month_names[mms|int][:3] }}</span>
+          <span style="font-size:13.5px;font-weight:{{ '700' if emp.date_of_birth==today_mmd else '400' }}">
+            {{ '🎂 ' if emp.date_of_birth==today_mmd else '' }}{{ emp.full_name }}
+          </span>
+          {% if is_admin %}<span style="font-size:12px;color:var(--text-light);margin-left:auto">{{ emp.get('role','') }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

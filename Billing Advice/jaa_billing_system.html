@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAA Billing System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0d2647;--navy2:#0b1f3a;--navy3:#162d52;
+  --gold:#c9a84c;--gold-dim:#a8863c;--gold-bg:rgba(201,168,76,0.10);
+  --teal:#2dd4bf;--teal-dark:#0ea5a0;--teal-bg:rgba(45,212,191,0.09);
+  --bg:#f0f4f8;--white:#ffffff;--border:#dde3eb;--border2:#c8d2de;
+  --text:#1a2744;--text2:#5a6a80;--text3:#8a99b0;--label:#6b7a94;
+  --green:#10b981;--red:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.app-header{background:var(--navy);height:56px;display:flex;align-items:stretch;padding:0 32px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,0.18);}
+.header-brand{display:flex;align-items:center;gap:11px;padding-right:24px;border-right:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
+.brand-mark{width:32px;height:32px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:12px;font-weight:700;color:var(--navy);}
+.brand-name{font-family:'DM Serif Display',serif;font-size:16px;color:#fff;}
+.brand-name span{color:var(--gold);}
+.brand-sub{font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.step-indicator{display:flex;align-items:center;gap:6px;}
+.step-pill{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:0.3px;}
+.step-pill.intern{background:rgba(45,212,191,0.18);color:var(--teal);border:1px solid rgba(45,212,191,0.3);}
+.step-pill.admin{background:rgba(201,168,76,0.18);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+.hdr-btn{padding:6px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.hdr-btn-lock{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);}
+.hdr-btn-lock:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.hdr-btn-clients{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+.hdr-btn-clients:hover{background:rgba(201,168,76,0.25);}
+
+/* BANNERS */
+.step-banner{padding:10px 32px;font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.step-banner.intern-banner{background:rgba(45,212,191,0.07);border-bottom:1px solid rgba(45,212,191,0.2);color:var(--teal-dark);}
+.step-banner.admin-banner{background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.2);color:var(--gold-dim);}
+
+/* LAYOUT */
+.container{max-width:660px;margin:0 auto;padding:28px 20px 72px;}
+
+/* SECTION HEADS */
+.sh{display:flex;align-items:center;gap:10px;margin:28px 0 12px;}
+.sh:first-child{margin-top:0;}
+.sh-icon{width:28px;height:28px;border-radius:7px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sh-title{font-family:'DM Serif Display',serif;font-size:14px;color:var(--navy);}
+.sh-line{flex:1;height:1px;background:var(--border);}
+.sh-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+.sh-badge.ib{background:rgba(45,212,191,0.12);color:var(--teal-dark);border:1px solid rgba(45,212,191,0.25);}
+.sh-badge.ab{background:rgba(201,168,76,0.12);color:var(--gold-dim);border:1px solid rgba(201,168,76,0.25);}
+
+/* FIELD GROUP */
+.fg{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.06);}
+.f{padding:11px 15px;border-bottom:1px solid var(--border);position:relative;}
+.f:last-child{border-bottom:none;}
+.f label{display:block;font-size:10px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+.f input,.f select,.f textarea{width:100%;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13.5px;color:var(--text);padding:0;}
+.f input::placeholder,.f textarea::placeholder{color:var(--text3);}
+.f select{cursor:pointer;}
+.f select option{background:#fff;color:var(--text);}
+.f textarea{resize:vertical;min-height:52px;line-height:1.55;}
+.f input[type="date"]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
+.r2{display:grid;grid-template-columns:1fr 1fr;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;}
+.r2 .f:not(:last-child),.r3 .f:not(:last-child),.r4 .f:not(:last-child){border-right:1px solid var(--border);}
+
+/* TOGGLES */
+.tg{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;}
+.tg label{padding:5px 13px;border:1.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text2);transition:all 0.15s;text-transform:none;letter-spacing:0;margin-bottom:0;}
+.tg input[type="radio"]{display:none;}
+.tg label:has(input:checked){background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600;}
+.tg.tc label:has(input:checked){background:var(--teal-dark);border-color:var(--teal-dark);color:#fff;}
+
+/* AUTOCOMPLETE */
+.ac-wrap{position:relative;}
+.ac-row{display:flex;align-items:center;gap:8px;}
+.ac-row input{flex:1;}
+.ac-saved-badge{font-size:10.5px;font-weight:600;color:var(--green);background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:2px 8px;white-space:nowrap;flex-shrink:0;display:none;}
+.ac-dd{position:absolute;top:calc(100% + 2px);left:-15px;right:-15px;background:var(--white);border:1px solid var(--border2);border-radius:8px;box-shadow:0 8px 24px rgba(13,38,71,0.13);z-index:100;overflow:hidden;display:none;}
+.ac-dd.open{display:block;}
+.ac-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.12s;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.sel{background:var(--bg);}
+.ac-item .ain{font-size:13px;font-weight:600;color:var(--text);}
+.ac-item .aig{font-size:11px;color:var(--text2);font-family:monospace;margin-top:1px;}
+.ac-new{padding:9px 13px;cursor:pointer;font-size:12.5px;color:var(--teal-dark);font-weight:600;background:var(--teal-bg);}
+.ac-new:hover{background:rgba(45,212,191,0.15);}
+.gstin-row{display:flex;align-items:center;gap:8px;}
+.gstin-row input{flex:1;}
+.save-btn{padding:4px 11px;border-radius:6px;background:var(--navy);color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;display:none;}
+.save-btn:hover{background:var(--navy3);}
+
+/* GST STRIP */
+.gst-strip{background:var(--navy);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px;text-align:center;}
+.gcl{font-size:9.5px;text-transform:uppercase;letter-spacing:0.8px;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.gcv{font-family:'DM Serif Display',serif;font-size:17px;color:var(--gold);}
+.gcs{font-size:10.5px;color:rgba(255,255,255,0.45);margin-top:2px;}
+
+/* AMOUNT PANEL */
+.amt-panel{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.06);}
+.amt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-bottom:1px solid var(--border);font-size:13.5px;}
+.amt-row:last-child{border-bottom:none;}
+.amt-row .al{color:var(--text2);}
+.amt-row .av{font-weight:600;color:var(--text);}
+.amt-row.gr .av{color:var(--teal-dark);}
+.amt-row.tr{background:var(--navy);}
+.amt-row.tr .al{font-family:'DM Serif Display',serif;font-size:14px;color:rgba(255,255,255,0.75);}
+.amt-row.tr .av{font-family:'DM Serif Display',serif;font-size:18px;color:var(--gold);}
+
+
+/* INV NO */
+.ino-row{display:flex;align-items:center;gap:8px;}
+.ino-row input{flex:1;}
+.ino-tag{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;display:none;}
+.ino-tag.ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
+.ino-tag.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.ino-tag.err{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;}
+
+/* BUTTONS */
+.actions{display:flex;gap:9px;justify-content:flex-end;margin-top:28px;flex-wrap:wrap;}
+.btn{padding:10px 22px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;border:none;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+.btn-ghost{background:var(--white);color:var(--text2);border:1.5px solid var(--border2);}
+.btn-ghost:hover{border-color:var(--navy);color:var(--navy);}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:700;}
+.btn-gold:hover{background:#d4af5a;}
+.btn-teal{background:var(--teal-dark);color:#fff;}
+.btn-teal:hover{background:#0d9490;}
+.btn-navy{background:var(--navy);color:#fff;}
+.btn-navy:hover{background:var(--navy3);}
+.btn-blue{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;}
+.btn-blue:hover{background:#bfdbfe;}
+.btn-red{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;}
+.btn-red:hover{background:#fecaca;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(11,31,58,0.6);z-index:300;overflow-y:auto;padding:28px 14px;backdrop-filter:blur(3px);}
+.modal-overlay.active{display:flex;align-items:flex-start;justify-content:center;}
+.modal-box{background:var(--white);border:1px solid var(--border);border-radius:12px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 20px 60px rgba(11,31,58,0.25);}
+.modal-bar{background:var(--navy);padding:13px 20px;display:flex;align-items:center;gap:9px;}
+.modal-bar span{color:rgba(255,255,255,0.55);font-size:13px;margin-right:auto;}
+.mb-close{padding:5px 12px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;}
+.mb-close:hover{background:rgba(255,255,255,0.2);}
+
+/* PASSWORD */
+.pwd-body{padding:28px 24px;}
+.pwd-icon{text-align:center;margin-bottom:14px;font-size:38px;}
+.pwd-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--navy);text-align:center;margin-bottom:5px;}
+.pwd-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:18px;}
+.pwd-wrap{position:relative;}
+.pwd-wrap input{width:100%;padding:11px 44px 11px 14px;border:2px solid var(--border2);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;letter-spacing:2px;transition:border-color 0.15s;}
+.pwd-wrap input:focus{border-color:var(--navy);}
+.pwd-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);font-size:16px;background:none;border:none;}
+.pwd-err{color:var(--red);font-size:12.5px;margin-top:6px;display:none;text-align:center;}
+.pwd-btn{width:100%;margin-top:14px;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+.pwd-btn:hover{background:var(--navy3);}
+.pwd-hint{font-size:11.5px;color:var(--text3);text-align:center;margin-top:10px;}
+
+/* CLIENT MANAGER */
+.modal-box-w{max-width:600px;}
+.cm-body{padding:20px;}
+.cm-add{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end;}
+.cm-field label{display:block;font-size:10px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;}
+.cm-field input{width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;}
+.cm-field input:focus{border-color:var(--navy);}
+.cm-add-btn{padding:9px 18px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;height:fit-content;}
+.cm-tip{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:7px;padding:9px 13px;font-size:12px;color:#92400e;margin-bottom:14px;}
+.cm-si input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;background:var(--bg);margin-bottom:10px;}
+.cm-si input:focus{border-color:var(--navy);background:var(--white);}
+.cm-cnt{font-size:11.5px;color:var(--text3);margin-bottom:8px;}
+.cm-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:280px;overflow-y:auto;}
+.cm-row{display:flex;align-items:center;padding:9px 13px;border-bottom:1px solid var(--border);gap:10px;}
+.cm-row:last-child{border-bottom:none;}
+.cm-row:hover{background:var(--bg);}
+.cm-rn{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.cm-rg{font-size:11.5px;color:var(--text2);font-family:monospace;min-width:140px;}
+.cm-rd{width:26px;height:26px;border-radius:5px;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cm-rd:hover{background:#fecaca;}
+.cm-empty{padding:20px;text-align:center;color:var(--text3);font-size:13px;}
+
+@media(max-width:600px){
+  .app-header{padding:0 12px;}
+  .container{padding:18px 12px 56px;}
+  .r2,.r3,.r4{grid-template-columns:1fr;}
+  .r2 .f:not(:last-child),.r3 .f:not(:last-child),.r4 .f:not(:last-child){border-right:none;}
+  .gst-strip{grid-template-columns:1fr 1fr;}
+  .cm-add{grid-template-columns:1fr;}
+  .step-indicator{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-mark">JAA</div>
+    <div>
+      <div class="brand-name"><span>JAA</span> Billing System</div>
+      <div class="brand-sub">Joshi Apte &amp; Associates</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="step-indicator">
+      <span class="step-pill intern" id="pillIntern">● Step 1 — Intern</span>
+      <span style="color:rgba(255,255,255,0.25);font-size:12px">→</span>
+      <span class="step-pill admin" id="pillAdmin" style="opacity:0.4">Step 2 — Admin</span>
+    </div>
+    <button class="hdr-btn hdr-btn-clients" onclick="openCM()">👤 Clients</button>
+    <button class="hdr-btn hdr-btn-lock" id="adminBtn" onclick="toggleAdmin()">🔒 Admin Login</button>
+  </div>
+</header>
+
+<!-- DRAFT RESTORE MODAL — shown on load when a saved draft exists -->
+<div id="draftModal" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,0.65);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:460px;margin:20px;overflow:hidden;box-shadow:0 24px 64px rgba(11,31,58,0.3);">
+    <!-- header -->
+    <div style="background:#0d2647;padding:16px 22px;display:flex;align-items:center;gap:10px;">
+      <div style="width:34px;height:34px;background:#c9a84c;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📂</div>
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:15px;color:#fff;">Saved Draft Found</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px">You have an unsaved billing advice in progress</div>
+      </div>
+    </div>
+    <!-- draft summary -->
+    <div style="padding:20px 22px;">
+      <div id="draftSummary" style="background:#f0f4f8;border-radius:8px;padding:14px 16px;margin-bottom:18px;border-left:3px solid #c9a84c;">
+        <!-- filled by JS -->
+      </div>
+      <p style="font-size:13px;color:#5a6a80;margin-bottom:18px;line-height:1.55;">Would you like to <strong style="color:#0d2647">continue this draft</strong>, or start a fresh form?</p>
+      <div style="display:flex;gap:10px;">
+        <button onclick="continueDraft()" style="flex:1;padding:11px;background:#0d2647;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">📂 Continue Draft</button>
+        <button onclick="discardAndStart()" style="flex:1;padding:11px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">🗑 Start Fresh</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE STATUS BAR -->
+<div id="saveBar" style="background:#fff;border-bottom:1px solid #dde3eb;padding:8px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <span id="saveIndicator" style="font-size:12px;font-weight:500;color:#8a99b0">No draft saved yet</span>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button onclick="saveDraft()" style="padding:5px 14px;border-radius:6px;background:#0d2647;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">💾 Save Draft</button>
+    <button onclick="if(confirm('Discard saved draft and clear all fields?')){clearDraft();clearForm();}" style="padding:5px 14px;border-radius:6px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">🗑 Discard Draft</button>
+  </div>
+</div>
+<!-- TOAST -->
+<div id="saveToast" style="position:fixed;bottom:24px;right:24px;background:#0d2647;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity 0.3s,transform 0.3s;pointer-events:none;box-shadow:0 4px 16px rgba(13,38,71,0.25);">✓ Draft saved</div>
+
+<div class="step-banner intern-banner" id="bannerIntern">
+  ✏️ <strong>Intern View</strong> — Fill all billing advice details. Export the Billing Advice when done. Professional fees &amp; invoice are added by the Admin/Partner.
+</div>
+<div class="step-banner admin-banner" id="bannerAdmin" style="display:none">
+  🔑 <strong>Admin Mode Active</strong> — All fields unlocked. Add fees, GST, generate invoice and export.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- 1. FIRM & CLIENT -->
+  <div class="sh"><div class="sh-icon">🏛</div><div class="sh-title">Firm &amp; Client Details</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <div class="f">
+      <label>1. Billing Firm</label>
+      <select id="firmName" onchange="onFirmChange()">
+        <option value="">— Select Firm —</option>
+        <option value="JAA">JAA</option>
+        <option value="DVJ">DVJ</option>
+        <option value="LISPL">LISPL</option>
+        <option value="Other">Other (specify below)</option>
+      </select>
+    </div>
+    <div class="f" id="firmOtherWrap" style="display:none">
+      <label>Custom Firm Name</label>
+      <input type="text" id="firmOther" placeholder="Enter firm name">
+    </div>
+    <div class="f">
+      <label>2. Client / Company Name</label>
+      <div class="ac-wrap">
+        <div class="ac-row">
+          <input type="text" id="clientName" placeholder="Type to search saved clients…" oninput="onClientType()" onkeydown="onClientKey(event)" autocomplete="off">
+          <span class="ac-saved-badge" id="acBadge">✓ Saved</span>
+        </div>
+        <div class="ac-dd" id="acDD"></div>
+      </div>
+    </div>
+    <div class="f">
+      <label>Client Address</label>
+      <textarea id="clientAddr" placeholder="Full registered address"></textarea>
+    </div>
+    <div class="r2">
+      <div class="f">
+        <label>Client GSTIN</label>
+        <div class="gstin-row">
+          <input type="text" id="clientGSTIN" placeholder="Auto-fills for saved clients" maxlength="15" oninput="onGSTINType()">
+          <button class="save-btn" id="gstinSaveBtn" onclick="saveClient()">+ Save</button>
+        </div>
+      </div>
+      <div class="f">
+        <label>Applicable Tax</label>
+        <div class="tg">
+          <label><input type="radio" name="taxType" value="CGST_SGST" onchange="detectGST()"><span>CGST &amp; SGST</span></label>
+          <label><input type="radio" name="taxType" value="IGST" onchange="detectGST()"><span>IGST</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. AUDIT -->
+  <div class="sh"><div class="sh-icon">📅</div><div class="sh-title">Audit &amp; Service Details</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>3. Date of Cost Audit Report / Certificate</label><input type="date" id="auditDate"></div>
+      <div class="f"><label>No. of Items / Certificates</label><input type="number" id="numItems" placeholder="e.g. 2" min="1"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>4. UDIN Taken?</label><div class="tg"><label><input type="radio" name="udin" value="Yes"><span>Yes</span></label><label><input type="radio" name="udin" value="No"><span>No</span></label></div></div>
+      <div class="f"><label>First Time Client?</label><div class="tg"><label><input type="radio" name="firstTime" value="Yes"><span>Yes</span></label><label><input type="radio" name="firstTime" value="No"><span>No</span></label></div></div>
+    </div>
+    <div class="f"><label>Financial Year of Cost Audit</label><input type="text" id="fy" placeholder="e.g. 2024-25"></div>
+    <div class="f"><label>5. Particulars of Professional Service (certificate no. &amp; date if any)</label><textarea id="serviceDesc" placeholder="e.g. Cost Audit for FY 2024-25 under Section 148 of Companies Act 2013. Cert No: ___" style="min-height:64px"></textarea></div>
+  </div>
+
+  <!-- 3. TEAM -->
+  <div class="sh"><div class="sh-icon">👥</div><div class="sh-title">Team &amp; XBRL</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>6. XBRL Pages</label><input type="number" id="xbrl" placeholder="0" min="0"></div>
+      <div class="f"><label>&nbsp;</label></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Partner / Associate / CMA 1</label><input type="text" id="partner1" placeholder="Name"></div>
+      <div class="f"><label>Partner / Associate / CMA 2</label><input type="text" id="partner2" placeholder="Name"></div>
+    </div>
+    <div class="r3">
+      <div class="f"><label>7. Trainee 1</label><input type="text" id="trainee1" placeholder="Name"></div>
+      <div class="f"><label>Trainee 2</label><input type="text" id="trainee2" placeholder="Name"></div>
+      <div class="f"><label>Trainee 3</label><input type="text" id="trainee3" placeholder="Name"></div>
+    </div>
+  </div>
+
+  <!-- 4. OOP -->
+  <div class="sh"><div class="sh-icon">💼</div><div class="sh-title">OOP — Out of Pocket Expenses</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <div class="r4">
+      <div class="f"><label>8. Month 1</label><input type="text" id="m1" placeholder="April"></div>
+      <div class="f"><label>Month 2</label><input type="text" id="m2" placeholder="June"></div>
+      <div class="f"><label>Month 3</label><input type="text" id="m3" placeholder="August"></div>
+      <div class="f"><label>Month 4</label><input type="text" id="m4" placeholder="October"></div>
+    </div>
+    <div class="r3">
+      <div class="f"><label>9. Trainee 1 OOP (₹)</label><input type="number" id="tOOP1" placeholder="0" oninput="calcAmts()"></div>
+      <div class="f"><label>Trainee 2 OOP (₹)</label><input type="number" id="tOOP2" placeholder="0" oninput="calcAmts()"></div>
+      <div class="f"><label>Trainee 3 OOP (₹)</label><input type="number" id="tOOP3" placeholder="0" oninput="calcAmts()"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>10. Partner / Associate 1 OOP (₹)</label><input type="number" id="pOOP1" placeholder="0" oninput="calcAmts()"></div>
+      <div class="f"><label>Partner / Associate 2 OOP (₹)</label><input type="number" id="pOOP2" placeholder="0" oninput="calcAmts()"></div>
+    </div>
+  </div>
+
+  <!-- 5. CRA -->
+  <div class="sh"><div class="sh-icon">📋</div><div class="sh-title">CRA Filing Details</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <!-- CRA2 row -->
+    <div class="r2">
+      <div class="f">
+        <label>11. Who Filed CRA2?</label>
+        <div class="tg tc"><label><input type="radio" name="cra2" value="JAA" onchange="toggleFiling()"><span>JAA</span></label><label><input type="radio" name="cra2" value="Company" checked onchange="toggleFiling()"><span>Company</span></label></div>
+      </div>
+      <div class="f">
+        <label>Who Filed CRA4?</label>
+        <div class="tg tc"><label><input type="radio" name="cra4" value="JAA" onchange="toggleFiling()"><span>JAA</span></label><label><input type="radio" name="cra4" value="Company" checked onchange="toggleFiling()"><span>Company</span></label></div>
+      </div>
+    </div>
+    <!-- SRN row — each cell hides independently -->
+    <div class="r2">
+      <div class="f" id="srnCRA2Wrap" style="display:none">
+        <label>12. SRN of CRA2 (filed by JAA)</label>
+        <input type="text" id="srnCRA2" placeholder="SRN Number">
+      </div>
+      <div class="f" id="srnCRA4Wrap" style="display:none">
+        <label>12. SRN of CRA4 (filed by JAA)</label>
+        <input type="text" id="srnCRA4" placeholder="SRN Number">
+      </div>
+    </div>
+    <!-- Cost row — each cell hides independently -->
+    <div class="r2">
+      <div class="f" id="cra2CostWrap" style="display:none">
+        <label>13. Cost of Filing CRA2 by JAA (₹)</label>
+        <input type="number" id="cra2Cost" placeholder="0" oninput="calcAmts()">
+      </div>
+      <div class="f" id="cra4CostWrap" style="display:none">
+        <label>Cost of Filing CRA4 by JAA (₹)</label>
+        <input type="number" id="cra4Cost" placeholder="0" oninput="calcAmts()">
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CONTACT -->
+  <div class="sh"><div class="sh-icon">📬</div><div class="sh-title">Contact &amp; Advice Details</div><div class="sh-line"></div><span class="sh-badge ib">Intern</span></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>14. Concerned Person — Name</label><input type="text" id="contactName" placeholder="Person to send bill to"></div>
+      <div class="f"><label>Designation</label><input type="text" id="contactDesig" placeholder="CFO / Finance Manager"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Advice From — Partner's Name</label><input type="text" id="advicePartner" placeholder="Partner's name"></div>
+      <div class="f"><label>Date</label><input type="date" id="adviceDate"></div>
+    </div>
+    <div class="f"><label>15. Any Other / Additional Information</label><textarea id="additionalInfo" placeholder="Any special notes or instructions…" style="min-height:60px"></textarea></div>
+  </div>
+
+  <!-- INTERN ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-ghost" onclick="if(confirm('Clear all fields?'))clearForm()">🗑 Clear</button>
+    <button class="btn btn-blue" onclick="doExportDocx('ba')">📄 Download DOCX</button>
+    <button class="btn btn-teal" onclick="doExportPDF('ba')">📥 Download PDF</button>
+    <button class="btn btn-navy" onclick="doPrint('ba')">🖨 Print</button>
+  </div>
+
+  <!-- ══════════════ ADMIN SECTION ══════════════ -->
+  <div style="margin-top:36px">
+    <div class="sh"><div class="sh-icon" style="background:var(--gold-dim)">🔑</div><div class="sh-title">Admin / Partner Section</div><div class="sh-line"></div><span class="sh-badge ab">Admin only</span></div>
+
+    <!-- LOCK OVERLAY -->
+    <div id="lockOverlay" style="background:#f0f4f8;border:2px dashed var(--border2);border-radius:10px;padding:28px;text-align:center;">
+      <div style="font-size:30px;margin-bottom:8px">🔒</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:15px;color:var(--navy);margin-bottom:4px">Admin Access Required</div>
+      <div style="font-size:12.5px;color:var(--text2);margin-bottom:16px">Professional fees, GST &amp; invoice generation are restricted to Admin/Partner.</div>
+      <button class="btn btn-navy" style="margin:0 auto" onclick="toggleAdmin()">🔑 Login as Admin</button>
+    </div>
+
+    <!-- ADMIN CONTENT -->
+    <div id="adminContent" style="display:none">
+
+      <div class="fg" style="margin-bottom:6px">
+        <div class="f"><label>Firm GSTIN</label><input type="text" id="jaaGSTIN" placeholder="27AAAAA0000A1Z5" maxlength="15" oninput="detectGST()"></div>
+      </div>
+
+      <div class="gst-strip">
+        <div><div class="gcl">GST Type</div><div class="gcv" id="gstType" style="font-size:13px;padding-top:2px;color:rgba(255,255,255,0.6)">—</div><div class="gcs" id="gstDesc">Set tax type above</div></div>
+        <div><div class="gcl">Rate</div><div class="gcv" id="gstRate">—%</div><div class="gcs" id="gstBreak">—</div></div>
+        <div><div class="gcl">GST Amount</div><div class="gcv" id="gstAmt">₹0</div><div class="gcs" id="gstAmtSub">—</div></div>
+      </div>
+
+      <div class="sh"><div class="sh-icon" style="background:var(--gold-dim)">💰</div><div class="sh-title">Professional Fees</div><div class="sh-line"></div></div>
+      <div class="fg">
+        <div class="f"><label>Professional Fee (₹)</label><input type="number" id="profFee" placeholder="0.00" oninput="calcAmts()"></div>
+        <div class="f"><label>GST Rate</label><div class="tg"><label><input type="radio" name="gstR" value="18" checked onchange="calcAmts()"><span>18%</span></label><label><input type="radio" name="gstR" value="12" onchange="calcAmts()"><span>12%</span></label><label><input type="radio" name="gstR" value="5" onchange="calcAmts()"><span>5%</span></label><label><input type="radio" name="gstR" value="0" onchange="calcAmts()"><span>Nil</span></label></div></div>
+      </div>
+      <div class="amt-panel">
+        <div class="amt-row"><span class="al">Professional Fee</span><span class="av" id="dFee">₹0.00</span></div>
+        <div class="amt-row"><span class="al">OOP (Trainee + Partner)</span><span class="av" id="dOOP">₹0.00</span></div>
+        <div class="amt-row"><span class="al">Filing Charges (CRA2 + CRA4)</span><span class="av" id="dFil">₹0.00</span></div>
+        <div class="amt-row gr"><span class="al" id="gstLabel">GST (18%)</span><span class="av" id="dGST">₹0.00</span></div>
+        <div class="amt-row tr"><span class="al">Total Payable</span><span class="av" id="dTot">₹0.00</span></div>
+      </div>
+
+      <div class="sh"><div class="sh-icon" style="background:var(--gold-dim)">🔢</div><div class="sh-title">Invoice Number</div><div class="sh-line"></div></div>
+      <div class="fg">
+        <div class="r2">
+          <div class="f"><label>Invoice Number</label><div class="ino-row"><input type="text" id="invoiceNo" placeholder="Auto-generated on firm select" oninput="onInvEdit()"><span class="ino-tag" id="invTag"></span></div></div>
+          <div class="f"><label>Invoice Date</label><input type="date" id="invoiceDate"></div>
+        </div>
+      </div>
+
+      <div class="sh"><div class="sh-icon" style="background:var(--gold-dim)">📝</div><div class="sh-title">Admin Record</div><div class="sh-line"></div></div>
+      <div class="fg">
+        <div class="r2">
+          <div class="f"><label>Name of Person Issuing Invoice</label><input type="text" id="adminIssuer" placeholder="Admin staff name"></div>
+          <div class="f"><label>Signature / Initials</label><input type="text" id="adminInit" placeholder="Initials"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="lockAdmin()">🔒 Lock</button>
+        <button class="btn btn-blue" onclick="doExportDocx('inv')">📄 Invoice DOCX</button>
+        <button class="btn btn-teal" onclick="doExportPDF('inv')">📥 Invoice PDF</button>
+        <button class="btn btn-navy" onclick="doPrint('inv')">🖨 Print Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="pwdModal">
+  <div class="modal-box">
+    <div class="modal-bar"><span>Admin Authentication</span><button class="mb-close" onclick="closeM('pwdModal')">✕</button></div>
+    <div class="pwd-body">
+      <div class="pwd-icon">🔑</div>
+      <div class="pwd-title">Admin / Partner Login</div>
+      <div class="pwd-sub">Enter the admin password to unlock fees &amp; invoice generation.</div>
+      <div class="pwd-wrap">
+        <input type="password" id="pwdIn" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPwd()">
+        <button class="pwd-eye" onclick="toggleEye()">👁</button>
+      </div>
+      <div class="pwd-err" id="pwdErr">Incorrect password. Please try again.</div>
+      <button class="pwd-btn" onclick="checkPwd()">Unlock Admin Section</button>
+      <div class="pwd-hint">Default password: <strong>JAA@Admin2024</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT MANAGER MODAL -->
+<div class="modal-overlay" id="cmModal">
+  <div class="modal-box modal-box-w">
+    <div class="modal-bar"><span>Client Database</span><button class="mb-close" onclick="closeM('cmModal')">✕</button></div>
+    <div class="cm-body">
+      <div class="cm-tip">💡 Add each client once with their GSTIN. Next time you type their name it auto-fills.</div>
+      <div class="cm-add">
+        <div class="cm-field"><label>Company Name</label><input type="text" id="cmName" placeholder="e.g. Tata Chemicals Ltd" onkeydown="if(event.key==='Enter')addClient()"></div>
+        <div class="cm-field"><label>GSTIN</label><input type="text" id="cmGSTIN" placeholder="27AAAAA0000A1Z5" maxlength="15" onkeydown="if(event.key==='Enter')addClient()"></div>
+        <button class="cm-add-btn" onclick="addClient()">+ Add</button>
+      </div>
+      <div class="cm-si"><input type="text" id="cmSearch" placeholder="🔍 Search clients…" oninput="renderCM()"></div>
+      <div class="cm-cnt" id="cmCnt"></div>
+      <div class="cm-list" id="cmList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ CONSTANTS ═══
+const PWD = 'JAA@Admin2024';
+let adminOn = false;
+let clients = [], counters = {}, usedNos = {};
+let invManual = false;
+
+// ═══ STORAGE ═══
+async function sg(k){try{const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}catch{return null;}}
+async function ss(k,v){try{await window.storage.set(k,JSON.stringify(v));}catch{}}
+
+// ═══ DRAFT SAVE / RESTORE ═══
+// All intern-fillable field IDs
+const DRAFT_FIELDS = [
+  'firmName','firmOther','clientName','clientAddr','clientGSTIN','auditDate',
+  'numItems','fy','serviceDesc','xbrl','partner1','partner2',
+  'trainee1','trainee2','trainee3','m1','m2','m3','m4',
+  'tOOP1','tOOP2','tOOP3','pOOP1','pOOP2',
+  'srnCRA2','srnCRA4','cra2Cost','cra4Cost',
+  'contactName','contactDesig','advicePartner','adviceDate','additionalInfo'
+];
+const DRAFT_RADIOS = ['taxType','udin','firstTime','cra2','cra4'];
+let autosaveTimer = null;
+
+async function saveDraft(silent=false){
+  const draft = {};
+  DRAFT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) draft[id] = el.value;
+  });
+  DRAFT_RADIOS.forEach(name => {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    if(el) draft['radio_'+name] = el.value;
+  });
+  draft._savedAt = new Date().toISOString();
+  await ss('jaa_draft', draft);
+  updateSaveIndicator(draft._savedAt, false);
+  if(!silent) showSaveToast();
+}
+
+async function restoreDraft(){
+  const draft = await sg('jaa_draft');
+  if(!draft) return false;
+  // Fill all fields
+  DRAFT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el && draft[id] !== undefined) el.value = draft[id];
+  });
+  DRAFT_RADIOS.forEach(name => {
+    const val = draft['radio_'+name];
+    if(val){
+      const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+      if(el) el.checked = true;
+    }
+  });
+  // Trigger dependent UI
+  if(document.getElementById('firmName').value==='Other')
+    document.getElementById('firmOtherWrap').style.display='block';
+  toggleFiling();
+  updateSaveIndicator(draft._savedAt, true);
+  return draft;
+}
+
+let _pendingDraft = null; // holds draft object while modal is open
+
+function scheduleAutosave(){
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=>saveDraft(true), 1500);
+}
+
+function updateSaveIndicator(isoTime, isRestore){
+  const el = document.getElementById('saveIndicator');
+  if(!el || !isoTime) return;
+  const dt = new Date(isoTime);
+  const str = dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' at ' +
+              dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  el.textContent = (isRestore ? '📂 Draft restored · ' : '✓ Saved · ') + str;
+  el.style.color = isRestore ? 'var(--teal-dark)' : 'var(--green)';
+}
+
+function showSaveToast(){
+  const t = document.getElementById('saveToast');
+  if(!t) return;
+  t.style.opacity='1'; t.style.transform='translateY(0)';
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(10px)'; }, 2000);
+}
+
+async function clearDraft(){
+  try{ await window.storage.delete('jaa_draft'); }catch{}
+  document.getElementById('saveIndicator').textContent = 'No draft saved yet';
+  document.getElementById('saveIndicator').style.color = '#8a99b0';
+}
+
+async function init(){
+  const c=await sg('jaa_clients');if(c)clients=c;
+  const ct=await sg('jaa_ctrs');if(ct)counters=ct;
+  const u=await sg('jaa_used');if(u)usedNos=u;
+
+  // Check for saved draft — show modal if found
+  const raw = await sg('jaa_draft');
+  if(raw){
+    _pendingDraft = raw;
+    showDraftModal(raw);
+  } else {
+    document.getElementById('invoiceDate').valueAsDate=new Date();
+    document.getElementById('adviceDate').valueAsDate=new Date();
+  }
+
+  // Attach autosave to all intern fields
+  DRAFT_FIELDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input', scheduleAutosave);
+    if(el) el.addEventListener('change', scheduleAutosave);
+  });
+  DRAFT_RADIOS.forEach(name=>{
+    document.querySelectorAll(`input[name="${name}"]`).forEach(el=>{
+      el.addEventListener('change', scheduleAutosave);
+    });
+  });
+}
+
+function showDraftModal(draft){
+  const dt = new Date(draft._savedAt);
+  const when = dt.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}) +
+               ' at ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const firm    = draft['firmName'] === 'Other' ? (draft['firmOther']||'—') : (draft['firmName']||'—');
+  const client  = draft['clientName'] || '—';
+  const fy      = draft['fy'] || '—';
+  const partner = draft['advicePartner'] || '—';
+
+  document.getElementById('draftSummary').innerHTML = `
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#c9a84c;margin-bottom:10px">Draft Summary</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+      <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Firm</div><div style="font-size:13px;font-weight:600;color:#0d2647">${firm}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Client</div><div style="font-size:13px;font-weight:600;color:#0d2647">${client}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Financial Year</div><div style="font-size:13px;font-weight:600;color:#0d2647">${fy}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Partner</div><div style="font-size:13px;font-weight:600;color:#0d2647">${partner}</div></div>
+    </div>
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:11.5px;color:#6b7280">🕐 Last saved: <strong style="color:#0d2647">${when}</strong></div>
+  `;
+  document.getElementById('draftModal').style.display = 'flex';
+}
+
+async function continueDraft(){
+  document.getElementById('draftModal').style.display = 'none';
+  if(_pendingDraft){
+    await restoreDraft();
+    _pendingDraft = null;
+  }
+}
+
+async function discardAndStart(){
+  document.getElementById('draftModal').style.display = 'none';
+  _pendingDraft = null;
+  await clearDraft();
+  document.getElementById('invoiceDate').valueAsDate=new Date();
+  document.getElementById('adviceDate').valueAsDate=new Date();
+  clearForm();
+}
+
+// ═══ ADMIN ═══
+function toggleAdmin(){if(adminOn)lockAdmin();else{document.getElementById('pwdIn').value='';document.getElementById('pwdErr').style.display='none';document.getElementById('pwdModal').classList.add('active');setTimeout(()=>document.getElementById('pwdIn').focus(),100);}}
+function checkPwd(){if(document.getElementById('pwdIn').value===PWD){closeM('pwdModal');unlockAdmin();}else{document.getElementById('pwdErr').style.display='block';document.getElementById('pwdIn').value='';}}
+function unlockAdmin(){
+  adminOn=true;
+  document.getElementById('lockOverlay').style.display='none';
+  document.getElementById('adminContent').style.display='block';
+  document.getElementById('bannerIntern').style.display='none';
+  document.getElementById('bannerAdmin').style.display='flex';
+  document.getElementById('adminBtn').textContent='🔓 Admin Active';
+  document.getElementById('adminBtn').style.cssText='background:rgba(201,168,76,0.18);color:var(--gold);border:1px solid rgba(201,168,76,0.3);';
+  document.getElementById('pillAdmin').style.opacity='1';
+  document.getElementById('pillIntern').style.opacity='0.5';
+  genInvNo();
+}
+function lockAdmin(){
+  adminOn=false;
+  document.getElementById('lockOverlay').style.display='block';
+  document.getElementById('adminContent').style.display='none';
+  document.getElementById('bannerIntern').style.display='flex';
+  document.getElementById('bannerAdmin').style.display='none';
+  document.getElementById('adminBtn').textContent='🔒 Admin Login';
+  document.getElementById('adminBtn').style.cssText='';
+  document.getElementById('pillAdmin').style.opacity='0.4';
+  document.getElementById('pillIntern').style.opacity='1';
+}
+function toggleEye(){const i=document.getElementById('pwdIn');i.type=i.type==='password'?'text':'password';}
+
+// ═══ CLIENT DB ═══
+async function addClient(){
+  const n=document.getElementById('cmName').value.trim();
+  const g=document.getElementById('cmGSTIN').value.trim().toUpperCase();
+  if(!n){alert('Enter company name.');return;}
+  if(clients.some(c=>c.n.toLowerCase()===n.toLowerCase())){alert('Already saved.');return;}
+  clients.push({n,g});clients.sort((a,b)=>a.n.localeCompare(b.n));
+  document.getElementById('cmName').value='';document.getElementById('cmGSTIN').value='';
+  await ss('jaa_clients',clients);renderCM();
+}
+function delClient(i){if(!confirm(`Delete "${clients[i].n}"?`))return;clients.splice(i,1);ss('jaa_clients',clients);renderCM();}
+function renderCM(){
+  const q=(document.getElementById('cmSearch')?.value||'').toLowerCase();
+  const lst=document.getElementById('cmList');if(!lst)return;
+  const f=clients.filter(c=>c.n.toLowerCase().includes(q)||(c.g||'').toLowerCase().includes(q));
+  document.getElementById('cmCnt').textContent=`${clients.length} saved${q?' · '+f.length+' matching':''}`;
+  lst.innerHTML=f.length?f.map(c=>{const ri=clients.indexOf(c);return`<div class="cm-row"><div class="cm-rn">${e(c.n)}</div><div class="cm-rg">${c.g||'<i style="color:var(--text3)">No GSTIN</i>'}</div><button class="cm-rd" onclick="delClient(${ri})">✕</button></div>`;}).join(''):`<div class="cm-empty">${clients.length?'No match.':'No clients yet.'}</div>`;}
+function openCM(){renderCM();document.getElementById('cmModal').classList.add('active');}
+function saveClient(){
+  const n=document.getElementById('clientName').value.trim();
+  const g=document.getElementById('clientGSTIN').value.trim().toUpperCase();
+  if(!n){alert('Enter company name first.');return;}
+  if(clients.some(c=>c.n.toLowerCase()===n.toLowerCase())){alert('Already saved.');return;}
+  clients.push({n,g});clients.sort((a,b)=>a.n.localeCompare(b.n));
+  ss('jaa_clients',clients);
+  document.getElementById('gstinSaveBtn').style.display='none';
+  document.getElementById('acBadge').style.display='inline-block';
+}
+
+// ═══ AUTOCOMPLETE ═══
+let acI=-1;
+function onClientType(){
+  const q=document.getElementById('clientName').value.trim();
+  const dd=document.getElementById('acDD');
+  document.getElementById('acBadge').style.display='none';
+  document.getElementById('gstinSaveBtn').style.display='none';
+  acI=-1;
+  if(!q){dd.classList.remove('open');return;}
+  const m=clients.filter(c=>c.n.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  const exact=clients.some(c=>c.n.toLowerCase()===q.toLowerCase());
+  let html=m.map((c,i)=>`<div class="ac-item" onmousedown="selClient('${e(c.n)}','${e(c.g||'')}')"><div class="ain">${hl(c.n,q)}</div><div class="aig">${c.g||'<span style="color:var(--text3)">No GSTIN</span>'}</div></div>`).join('');
+  if(!exact)html+=`<div class="ac-new" onmousedown="newClient('${e(q)}')">＋ Use "${e(q)}" as new client</div>`;
+  dd.innerHTML=html;dd.classList.add('open');
+}
+function hl(t,q){const i=t.toLowerCase().indexOf(q.toLowerCase());if(i<0)return e(t);return e(t.substring(0,i))+`<mark style="background:#fef3c7;border-radius:2px">${e(t.substring(i,i+q.length))}</mark>`+e(t.substring(i+q.length));}
+function onClientKey(ev){
+  const dd=document.getElementById('acDD');const items=dd.querySelectorAll('.ac-item,.ac-new');
+  if(ev.key==='ArrowDown'){ev.preventDefault();acI=Math.min(acI+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('sel',i===acI));}
+  else if(ev.key==='ArrowUp'){ev.preventDefault();acI=Math.max(acI-1,0);items.forEach((el,i)=>el.classList.toggle('sel',i===acI));}
+  else if(ev.key==='Enter'&&acI>=0){ev.preventDefault();items[acI].dispatchEvent(new Event('mousedown'));}
+  else if(ev.key==='Escape')closeAC();
+}
+function selClient(n,g){document.getElementById('clientName').value=n;document.getElementById('clientGSTIN').value=g;document.getElementById('acBadge').style.display='inline-block';document.getElementById('gstinSaveBtn').style.display='none';closeAC();detectGST();}
+function newClient(n){document.getElementById('clientName').value=n;closeAC();document.getElementById('gstinSaveBtn').style.display='inline-block';}
+function closeAC(){document.getElementById('acDD').classList.remove('open');}
+document.addEventListener('click',ev=>{if(!document.getElementById('clientName').contains(ev.target)&&!document.getElementById('acDD').contains(ev.target))closeAC();});
+function onGSTINType(){const n=document.getElementById('clientName').value.trim();const isNew=!clients.some(c=>c.n.toLowerCase()===n.toLowerCase());document.getElementById('gstinSaveBtn').style.display=(n&&isNew)?'inline-block':'none';detectGST();}
+
+// ═══ INV NO ═══
+function getFirm(){const s=document.getElementById('firmName').value;return s==='Other'?(document.getElementById('firmOther').value||''):(s||'');}
+function getFY(){const v=document.getElementById('fy').value.trim();if(v)return v;const now=new Date(),yr=now.getFullYear(),mo=now.getMonth()+1;return mo>=4?`${yr}-${String(yr+1).slice(2)}`:`${yr-1}-${String(yr).slice(2)}`;}
+function genInvNo(){
+  if(invManual||!adminOn)return;
+  const firm=getFirm();if(!firm){document.getElementById('invoiceNo').value='';document.getElementById('invTag').style.display='none';return;}
+  const fy=getFY();if(!counters[firm])counters[firm]={};
+  const next=(counters[firm][fy]||0)+1;
+  const no=`${firm}/${fy}/${String(next).padStart(3,'0')}`;
+  document.getElementById('invoiceNo').value=no;
+  showInvTag(`#${next} · ${firm} · ${fy}`,'ok');
+}
+function onInvEdit(){
+  const val=document.getElementById('invoiceNo').value.trim();
+  if(!val){invManual=false;genInvNo();return;}
+  invManual=true;
+  const used=(usedNos[getFirm()]?.[getFY()])||[];
+  showInvTag(used.includes(val)?'⚠ Already used!':'Custom',used.includes(val)?'err':'warn');
+}
+function showInvTag(t,c){const el=document.getElementById('invTag');el.textContent=t;el.className='ino-tag '+c;el.style.display='inline-block';}
+async function commitInv(){
+  const no=document.getElementById('invoiceNo').value.trim();if(!no)return;
+  const firm=getFirm(),fy=getFY();
+  if(!counters[firm])counters[firm]={};if(!usedNos[firm])usedNos[firm]={};if(!usedNos[firm][fy])usedNos[firm][fy]=[];
+  if(!usedNos[firm][fy].includes(no))usedNos[firm][fy].push(no);
+  const m=no.match(/^[A-Z]+\/[\d-]+\/(\d+)$/);if(m){const s=parseInt(m[1]);if(s>=(counters[firm][fy]||0))counters[firm][fy]=s;}
+  await ss('jaa_ctrs',counters);await ss('jaa_used',usedNos);
+}
+
+// ═══ GST & CALC ═══
+function getR(){return parseFloat(document.querySelector('input[name="gstR"]:checked')?.value||18);}
+function detectGST(){
+  if(!adminOn)return;
+  const cG=document.getElementById('clientGSTIN').value.trim();
+  const jG=document.getElementById('jaaGSTIN').value.trim();
+  const taxSel=document.querySelector('input[name="taxType"]:checked')?.value;
+  calcAmts();
+  if(!jG){document.getElementById('gstType').textContent='—';document.getElementById('gstDesc').textContent='Enter firm GSTIN';document.getElementById('gstRate').textContent='—%';document.getElementById('gstBreak').textContent='—';return;}
+  const intra=taxSel==='CGST_SGST'||(cG.length>=2&&jG.length>=2&&cG.substring(0,2)===jG.substring(0,2));
+  const r=getR();
+  document.getElementById('gstType').textContent=intra?'CGST + SGST':'IGST';
+  document.getElementById('gstDesc').textContent=intra?'Intra-State':'Inter-State';
+  document.getElementById('gstRate').textContent=r+'%';
+  document.getElementById('gstBreak').textContent=intra?`${r/2}% + ${r/2}%`:`IGST ${r}%`;
+}
+function calcAmts(){
+  if(!adminOn)return;
+  const fee=parseFloat(document.getElementById('profFee').value)||0;
+  const oop=(parseFloat(document.getElementById('tOOP1').value)||0)+(parseFloat(document.getElementById('tOOP2').value)||0)+(parseFloat(document.getElementById('tOOP3').value)||0)+(parseFloat(document.getElementById('pOOP1').value)||0)+(parseFloat(document.getElementById('pOOP2').value)||0);
+  const c2=parseFloat(document.getElementById('cra2Cost').value)||0,c4=parseFloat(document.getElementById('cra4Cost').value)||0;
+  const fil=c2+c4,r=getR(),tax=fee+oop+fil,gst=tax*r/100,tot=tax+gst;
+  const f=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('dFee').textContent=f(fee);
+  document.getElementById('dOOP').textContent=f(oop);
+  document.getElementById('dFil').textContent=f(fil);
+  document.getElementById('dGST').textContent=f(gst);
+  document.getElementById('dTot').textContent=f(tot);
+  document.getElementById('gstLabel').textContent=`GST (${r}%)`;
+  document.getElementById('gstAmt').textContent='₹'+Math.round(gst).toLocaleString('en-IN');
+}
+document.querySelectorAll('input[name="gstR"]').forEach(r=>r.addEventListener('change',calcAmts));
+document.querySelectorAll('input[name="taxType"]').forEach(r=>r.addEventListener('change',detectGST));
+function onFirmChange(){document.getElementById('firmOtherWrap').style.display=document.getElementById('firmName').value==='Other'?'block':'none';invManual=false;genInvNo();}
+function toggleFiling(){
+  const c2=document.querySelector('input[name="cra2"]:checked')?.value;
+  const c4=document.querySelector('input[name="cra4"]:checked')?.value;
+  // CRA2 fields — only visible when CRA2 = JAA
+  const show2 = c2==='JAA';
+  document.getElementById('srnCRA2Wrap').style.display  = show2 ? 'block' : 'none';
+  document.getElementById('cra2CostWrap').style.display = show2 ? 'block' : 'none';
+  if(!show2){ document.getElementById('srnCRA2').value=''; document.getElementById('cra2Cost').value=''; }
+  // CRA4 fields — only visible when CRA4 = JAA
+  const show4 = c4==='JAA';
+  document.getElementById('srnCRA4Wrap').style.display  = show4 ? 'block' : 'none';
+  document.getElementById('cra4CostWrap').style.display = show4 ? 'block' : 'none';
+  if(!show4){ document.getElementById('srnCRA4').value=''; document.getElementById('cra4Cost').value=''; }
+  // Hide entire row div when both sides are hidden — avoids empty gap
+  const srnRow  = document.getElementById('srnCRA2Wrap').parentElement;
+  const costRow = document.getElementById('cra2CostWrap').parentElement;
+  srnRow.style.display  = (show2||show4) ? 'grid' : 'none';
+  costRow.style.display = (show2||show4) ? 'grid' : 'none';
+  calcAmts();
+}
+
+// ═══ DATA ═══
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function gv(id){return document.getElementById(id)?.value||'';}
+function rv(nm){return document.querySelector(`input[name="${nm}"]:checked`)?.value||'—';}
+function fd(v,opts){if(!v)return'—';return new Date(v).toLocaleDateString('en-IN',opts||{day:'2-digit',month:'long',year:'numeric'});}
+function getData(){
+  const fee=parseFloat(gv('profFee'))||0;
+  const oop=(parseFloat(gv('tOOP1'))||0)+(parseFloat(gv('tOOP2'))||0)+(parseFloat(gv('tOOP3'))||0)+(parseFloat(gv('pOOP1'))||0)+(parseFloat(gv('pOOP2'))||0);
+  const c2c=parseFloat(gv('cra2Cost'))||0,c4c=parseFloat(gv('cra4Cost'))||0;
+  const fil=c2c+c4c,r=getR(),tax=fee+oop+fil,gst=tax*r/100,tot=tax+gst;
+  const cG=gv('clientGSTIN').trim(),jG=gv('jaaGSTIN').trim();
+  const taxSel=rv('taxType');
+  const intra=taxSel==='CGST_SGST'||(cG.length>=2&&jG.length>=2&&cG.substring(0,2)===jG.substring(0,2));
+  const months=[gv('m1'),gv('m2'),gv('m3'),gv('m4')].filter(Boolean).join(', ');
+  return{firm:getFirm(),clientName:gv('clientName'),clientAddr:gv('clientAddr'),clientGSTIN:cG,jaaGSTIN:jG,
+    taxType:intra?'CGST & SGST':'IGST',intra,
+    auditDate:fd(gv('auditDate')),numItems:gv('numItems'),udin:rv('udin'),firstTime:rv('firstTime'),fy:gv('fy'),
+    serviceDesc:gv('serviceDesc'),xbrl:gv('xbrl'),
+    partner1:gv('partner1'),partner2:gv('partner2'),
+    trainee1:gv('trainee1'),trainee2:gv('trainee2'),trainee3:gv('trainee3'),
+    months,tOOP1:parseFloat(gv('tOOP1'))||0,tOOP2:parseFloat(gv('tOOP2'))||0,tOOP3:parseFloat(gv('tOOP3'))||0,
+    pOOP1:parseFloat(gv('pOOP1'))||0,pOOP2:parseFloat(gv('pOOP2'))||0,
+    cra2By:rv('cra2'),cra4By:rv('cra4'),srnCRA2:gv('srnCRA2'),srnCRA4:gv('srnCRA4'),
+    cra2Cost:c2c,cra4Cost:c4c,
+    contactName:gv('contactName'),contactDesig:gv('contactDesig'),
+    advicePartner:gv('advicePartner'),adviceDate:fd(gv('adviceDate')),
+    additionalInfo:gv('additionalInfo'),
+    fee,oop,fil,tax,gst,tot,r,
+    invoiceNo:gv('invoiceNo'),invoiceDate:fd(gv('invoiceDate')),
+    adminIssuer:gv('adminIssuer'),adminInit:gv('adminInit'),
+  };
+}
+
+// ═══ BA HTML ═══
+function buildBA(d){
+  const f2=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const row=(n,l,v)=>`<tr style="border-bottom:1px solid #e8e5df;">
+    <td style="padding:9px 10px;font-weight:700;color:#1a2744;width:22px;vertical-align:top;font-size:13px;">${n}</td>
+    <td style="padding:9px 10px;color:#6b7280;width:200px;font-weight:500;vertical-align:top;font-size:13px;">${l}</td>
+    <td style="padding:9px 10px;color:#1a2744;font-weight:500;vertical-align:top;font-size:13px;">${v}</td>
+  </tr>`;
+  const bp=(val,yes='Yes')=>`<span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;background:${val===yes?'#dcfce7':'#fee2e2'};color:${val===yes?'#15803d':'#dc2626'}">${val}</span>`;
+  const bf=val=>`<span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;background:${val==='JAA'?'#dbeafe':'#f3f4f6'};color:${val==='JAA'?'#1d4ed8':'#6b7280'}">${val}</span>`;
+  let tR='';[[d.trainee1,d.tOOP1],[d.trainee2,d.tOOP2],[d.trainee3,d.tOOP3]].forEach(([n,v],i)=>{if(n||v)tR+=`<tr><td style="padding:3px 6px;font-size:12px;">${e(n)||'Trainee '+(i+1)}</td><td style="padding:3px 6px;font-size:12px;text-align:right;font-weight:600;">${f2(v)}</td></tr>`;});
+  let pR='';[[d.partner1,d.pOOP1],[d.partner2,d.pOOP2]].forEach(([n,v],i)=>{if(n||v)pR+=`<tr><td style="padding:3px 6px;font-size:12px;">${e(n)||'Partner '+(i+1)}</td><td style="padding:3px 6px;font-size:12px;text-align:right;font-weight:600;">${f2(v)}</td></tr>`;});
+  return`<div style="padding:28px 32px;font-family:Arial,sans-serif;background:#fff;color:#1a2744;">
+
+  <!-- ── LETTERHEAD ── -->
+  <div style="text-align:center;padding-bottom:14px;margin-bottom:0;border-bottom:3px solid #1a2744;">
+    <div style="font-size:24px;font-weight:700;color:#1a2744;font-family:Georgia,'Times New Roman',serif;letter-spacing:0.3px;">Joshi Apte &amp; Associates</div>
+    <div style="font-size:12px;font-weight:700;color:#1a2744;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Cost Accountants</div>
+  </div>
+
+  <!-- ── TITLE ROW ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 14px;border-bottom:1px solid #e8e5df;">
+    <div style="font-size:18px;font-weight:800;color:#1a2744;letter-spacing:2px;text-transform:uppercase;">Billing Advice</div>
+    <div style="text-align:right;">
+      <div style="font-size:11.5px;color:#6b7280;">Ref: <strong style="color:#1a2744;">${e(d.invoiceNo)||'Pending'}</strong></div>
+      <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">Date: <strong style="color:#1a2744;">${d.invoiceDate}</strong></div>
+    </div>
+  </div>
+
+  <!-- ── MAIN TABLE ── -->
+  <table style="width:100%;border-collapse:collapse;margin-top:4px;">
+    ${row(1,'Firm Name for Bill',`<strong style="font-size:13.5px;">${e(d.firm)||'—'}</strong>`)}
+    ${row(2,'Name &amp; Address of Company',`<strong style="font-size:13.5px;">${e(d.clientName)||'—'}</strong>${d.clientAddr?'<br><span style="font-size:12px;color:#6b7280;">'+e(d.clientAddr).replace(/\n/g,'<br>')+'</span>':''}<br><span style="font-size:11.5px;color:#6b7280;">Applicable Tax: <strong style="color:#1a2744;">${e(d.taxType)}</strong></span>`)}
+    ${row(3,'Date of Cost Audit Report / Certificate',`${d.auditDate} &nbsp;&nbsp; No. of Items: <strong>${e(d.numItems)||'—'}</strong>`)}
+    ${row(4,'UDIN / First Time Client / FY',`UDIN: ${bp(d.udin)} &nbsp; First Time: ${bp(d.firstTime)} &nbsp; FY: <strong>${e(d.fy)||'—'}</strong>`)}
+    ${row(5,'Particulars of Professional Service',`<span style="font-size:13px;">${e(d.serviceDesc)||'—'}</span>`)}
+    ${row(6,'XBRL Pages &amp; Partner / Associate Assisted',`XBRL Pages: <strong>${e(d.xbrl)||'0'}</strong><br>1.&nbsp;${e(d.partner1)||'—'} &nbsp;&nbsp; 2.&nbsp;${e(d.partner2)||'—'}`)}
+    ${row(7,'Trainee Assisted',`1.&nbsp;${e(d.trainee1)||'—'} &nbsp;&nbsp; 2.&nbsp;${e(d.trainee2)||'—'} &nbsp;&nbsp; 3.&nbsp;${e(d.trainee3)||'—'}`)}
+    ${row(8,'Months in which OOP Incurred',e(d.months)||'—')}
+    ${row(9,'OOP of Trainee',tR?`<table style="border-collapse:collapse;min-width:180px;">${tR}</table>`:'—')}
+    ${row(10,'OOP of Partner / Associate / CMA',pR?`<table style="border-collapse:collapse;min-width:180px;">${pR}</table>`:'—')}
+    ${row(11,'Who Filed Form CRA2 &amp; CRA4',`CRA2: ${bf(d.cra2By)} &nbsp;&nbsp; CRA4: ${bf(d.cra4By)}`)}
+    ${row(12,'SRN of CRA2 &amp; CRA4 Filed by JAA',`CRA2: <strong>${e(d.srnCRA2)||'—'}</strong> &nbsp;|&nbsp; CRA4: <strong>${e(d.srnCRA4)||'—'}</strong>`)}
+    ${row(13,'Cost of Filing by JAA',`CRA2: <strong>${f2(d.cra2Cost)}</strong> &nbsp;|&nbsp; CRA4: <strong>${f2(d.cra4Cost)}</strong>`)}
+    ${row(14,'Concerned Person — Bill to be Sent',`Name: <strong>${e(d.contactName)||'—'}</strong> &nbsp;&nbsp; Designation: <strong>${e(d.contactDesig)||'—'}</strong>`)}
+    ${d.additionalInfo?row(15,'Any Other / Additional Information',`<span style="font-size:13px;">${e(d.additionalInfo)}</span>`):''}
+  </table>
+
+  <!-- ── ADMIN ONLY ── -->
+  <div style="margin-top:16px;background:#fdf8ee;border-radius:6px;padding:12px 16px;border-left:3px solid #c9a84c;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a84c;margin-bottom:10px;">Admin Only</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Date of Issue of Invoice</div><div style="font-size:13px;font-weight:500;color:#1a2744;">${d.invoiceDate}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Name of Person Issuing Invoice</div><div style="font-size:13px;font-weight:500;color:#1a2744;">${e(d.adminIssuer)||'—'}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Invoice Number</div><div style="font-size:13px;font-weight:500;color:#1a2744;">${e(d.invoiceNo)||'—'}</div></div>
+      <div><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Signature / Initials of Issuer</div><div style="font-size:13px;font-weight:500;color:#1a2744;">${e(d.adminInit)||'—'}</div></div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <div style="margin-top:16px;padding-top:12px;border-top:1.5px solid #e8e5df;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div style="font-size:11.5px;color:#6b7280;line-height:1.7;">
+      Subject to Mumbai Jurisdiction.<br>Internal use only.
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">Advice from (Partner)</div>
+      <div style="font-size:12px;font-weight:700;color:#1a2744;margin-top:2px;font-family:Georgia,serif;">${e(d.advicePartner)||'—'}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:1px;">Date: ${d.adviceDate}</div>
+    </div>
+  </div>
+
+</div>`;
+}
+
+// ═══ INVOICE HTML ═══
+function buildInv(d){
+  const f=v=>v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  let gR='';
+  if(d.r>0){
+    if(d.intra) gR=`
+      <tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">CGST @ ${d.r/2}%</td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px" colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;text-align:right;font-weight:500;color:#059669">₹${f(d.gst/2)}</td></tr>
+      <tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">SGST @ ${d.r/2}%</td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px" colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;text-align:right;font-weight:500;color:#059669">₹${f(d.gst/2)}</td></tr>`;
+    else gR=`
+      <tr><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;color:#059669">IGST @ ${d.r}%</td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px" colspan="2"></td><td style="padding:8px 12px;border-bottom:1px solid #e8e5df;font-size:12.5px;text-align:right;font-weight:500;color:#059669">₹${f(d.gst)}</td></tr>`;
+  }
+  return`<div style="padding:28px 32px;font-family:Arial,sans-serif;background:#fff;color:#1a2744;max-width:100%;overflow:hidden;">
+
+  <!-- ── LETTERHEAD ── -->
+  <div style="text-align:center;padding-bottom:14px;margin-bottom:0;border-bottom:3px solid #1a2744;">
+    <div style="font-size:24px;font-weight:700;color:#1a2744;font-family:Georgia,'Times New Roman',serif;letter-spacing:0.3px;">Joshi Apte &amp; Associates</div>
+    <div style="font-size:12px;font-weight:700;color:#1a2744;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Cost Accountants</div>
+  </div>
+
+  <!-- ── INVOICE LABEL + META ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 14px;border-bottom:1px solid #e8e5df;">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#1a2744;letter-spacing:2px;text-transform:uppercase;">Tax Invoice</div>
+      ${d.jaaGSTIN?`<div style="font-size:11px;color:#6b7280;margin-top:3px;">GSTIN: <strong>${e(d.jaaGSTIN)}</strong></div>`:''}
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;color:#6b7280;">Invoice No.</div>
+      <div style="font-size:16px;font-weight:700;color:#c9a84c;margin-top:1px;">${e(d.invoiceNo)||'—'}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:2px;">Date: ${d.invoiceDate}</div>
+    </div>
+  </div>
+
+  <!-- ── BILL TO + DETAILS ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0;border-bottom:1px solid #e8e5df;">
+    <div style="padding:14px 16px 14px 0;border-right:1px solid #e8e5df;">
+      <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a84c;margin-bottom:7px;">Bill To</div>
+      <div style="font-size:13.5px;font-weight:700;color:#1a2744;margin-bottom:3px;">${e(d.clientName)||'—'}</div>
+      <div style="font-size:12px;color:#374151;line-height:1.6;">${e(d.clientAddr||'').replace(/\n/g,'<br>')}</div>
+      ${d.clientGSTIN?`<div style="font-size:11px;color:#6b7280;margin-top:4px;">GSTIN: ${e(d.clientGSTIN)}</div>`:''}
+      ${d.contactName?`<div style="font-size:11px;color:#6b7280;margin-top:3px;">Attn: ${e(d.contactName)}${d.contactDesig?', '+e(d.contactDesig):''}</div>`:''}
+    </div>
+    <div style="padding:14px 0 14px 20px;">
+      <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a84c;margin-bottom:7px;">Invoice Details</div>
+      <table style="border-collapse:collapse;width:100%">
+        <tr><td style="font-size:11.5px;color:#6b7280;padding:2px 0;width:110px;">Financial Year</td><td style="font-size:11.5px;font-weight:600;color:#1a2744;padding:2px 0;">${e(d.fy)||'—'}</td></tr>
+        <tr><td style="font-size:11.5px;color:#6b7280;padding:2px 0;">UDIN</td><td style="font-size:11.5px;font-weight:600;color:#1a2744;padding:2px 0;">${e(d.udin)}</td></tr>
+        ${d.auditDate!=='—'?`<tr><td style="font-size:11.5px;color:#6b7280;padding:2px 0;">Audit Date</td><td style="font-size:11.5px;font-weight:600;color:#1a2744;padding:2px 0;">${d.auditDate}</td></tr>`:''}
+        <tr><td style="font-size:11.5px;color:#6b7280;padding:2px 0;">Tax Type</td><td style="font-size:11.5px;padding:2px 0;"><span style="background:#1a2744;color:#c9a84c;font-size:10px;font-weight:700;padding:1px 8px;border-radius:4px;">${e(d.taxType)}</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PARTICULARS ── -->
+  <div style="padding:12px 0;border-bottom:1px solid #e8e5df;">
+    <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a84c;margin-bottom:5px;">Particulars of Service</div>
+    <div style="font-size:12.5px;color:#1a2744;line-height:1.6;">${e(d.serviceDesc)||'Professional Services'}</div>
+  </div>
+
+  <!-- ── FEE TABLE ── -->
+  <table style="width:100%;border-collapse:collapse;margin-top:16px;margin-bottom:0;">
+    <thead>
+      <tr style="background:#1a2744;">
+        <th style="padding:9px 12px;font-size:11px;text-align:left;font-weight:600;color:#fff;border-right:1px solid rgba(255,255,255,0.1);">Description</th>
+        <th style="padding:9px 12px;font-size:11px;text-align:left;font-weight:600;color:#fff;border-right:1px solid rgba(255,255,255,0.1);">SAC</th>
+        <th style="padding:9px 12px;font-size:11px;text-align:left;font-weight:600;color:#fff;border-right:1px solid rgba(255,255,255,0.1);">Taxable</th>
+        <th style="padding:9px 12px;font-size:11px;text-align:right;font-weight:600;color:#fff;">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #e8e5df;">
+        <td style="padding:9px 12px;font-size:12.5px;">Professional Fee</td>
+        <td style="padding:9px 12px;font-size:12.5px;">998231</td>
+        <td style="padding:9px 12px;font-size:12.5px;">Yes</td>
+        <td style="padding:9px 12px;font-size:12.5px;text-align:right;font-weight:500;">₹${f(d.fee)}</td>
+      </tr>
+      ${d.oop>0?`<tr style="border-bottom:1px solid #e8e5df;"><td style="padding:9px 12px;font-size:12.5px;">Out of Pocket Expenses</td><td style="padding:9px 12px;font-size:12.5px;">998231</td><td style="padding:9px 12px;font-size:12.5px;">Yes</td><td style="padding:9px 12px;font-size:12.5px;text-align:right;font-weight:500;">₹${f(d.oop)}</td></tr>`:''}
+      ${d.fil>0?`<tr style="border-bottom:1px solid #e8e5df;"><td style="padding:9px 12px;font-size:12.5px;">Filing Charges (CRA2 / CRA4)</td><td style="padding:9px 12px;font-size:12.5px;">998231</td><td style="padding:9px 12px;font-size:12.5px;">Yes</td><td style="padding:9px 12px;font-size:12.5px;text-align:right;font-weight:500;">₹${f(d.fil)}</td></tr>`:''}
+      <tr style="background:#f3f4f6;border-bottom:1px solid #e8e5df;">
+        <td colspan="3" style="padding:9px 12px;font-weight:600;font-size:12.5px;">Taxable Amount</td>
+        <td style="padding:9px 12px;font-weight:600;font-size:12.5px;text-align:right;">₹${f(d.tax)}</td>
+      </tr>
+      ${gR}
+      <tr style="background:#1a2744;">
+        <td colspan="3" style="padding:10px 12px;font-size:13px;font-weight:700;color:#fff;">Total Amount Payable</td>
+        <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#c9a84c;text-align:right;">₹${f(d.tot)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── FOOTER: NOTE + SIGNATURE ── -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:24px;padding-top:16px;border-top:2px solid #1a2744;gap:24px;">
+    <!-- Left -->
+    <div style="font-size:11px;color:#6b7280;line-height:1.8;max-width:260px;">
+      <strong style="color:#1a2744;font-size:11px;">Bank Details for Payment</strong><br>
+      Subject to Mumbai Jurisdiction.<br>
+      Payment due within 30 days of invoice date.
+    </div>
+    <!-- Right: signature -->
+    <div style="text-align:right;min-width:210px;">
+      <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">For and on behalf of</div>
+      <div style="font-size:13px;font-weight:700;color:#1a2744;font-family:Georgia,serif;margin-top:2px;">Joshi Apte &amp; Associates</div>
+      <div style="width:210px;height:60px;border:1.5px dashed #c8d2de;border-radius:6px;margin:10px 0 8px auto;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:9px;color:#c8d2de;letter-spacing:0.5px;">Signature</span>
+      </div>
+      <div style="font-size:12.5px;font-weight:700;color:#1a2744;">${e(d.advicePartner)||'Authorised Signatory'}</div>
+      <div style="font-size:10.5px;color:#6b7280;margin-top:1px;">Partner</div>
+      <div style="font-size:10.5px;color:#6b7280;margin-top:1px;">Date: ${d.invoiceDate}</div>
+    </div>
+  </div>
+
+</div>`;
+}
+
+// ═══ PRINT — opens new window ═══
+function doPrint(type){
+  if(type==='inv'&&!adminOn){alert('Admin login required.');return;}
+  if(type==='inv')commitInv();
+  const d=getData();
+  const html=type==='ba'?buildBA(d):buildInv(d);
+  const title=type==='ba'?`Billing_Advice_${d.clientName||'JAA'}_${d.fy||'FY'}`:`Invoice_${d.invoiceNo||'JAA'}_${d.clientName||'client'}`;
+  const pageStyle=type==='ba'
+    ? '@page{margin:1cm;size:A4;}body{font-size:13px;}'
+    : '@page{margin:1cm;size:A4;}body{font-size:11px;}';
+  const win=window.open('','_blank','width=1000,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+  <style>
+    ${pageStyle}
+    body{margin:0;padding:0;font-family:Arial,sans-serif;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  </style>
+  </head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
+// ═══ PDF — new window + print to PDF ═══
+function doExportPDF(type){
+  if(type==='inv'&&!adminOn){alert('Admin login required.');return;}
+  if(type==='inv')commitInv();
+  const d=getData();
+  const html=type==='ba'?buildBA(d):buildInv(d);
+  const fn=type==='ba'?`Billing_Advice_${d.clientName||'JAA'}_${d.fy||'FY'}`:`Invoice_${d.invoiceNo||'JAA'}_${d.clientName||'client'}`;
+  const pageStyle=type==='ba'
+    ? '@page{margin:1cm;size:A4;}body{font-size:13px;}'
+    : '@page{margin:1cm;size:A4;}body{font-size:11px;}';
+  const win=window.open('','_blank','width=1000,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${fn}</title>
+  <style>
+    ${pageStyle}
+    body{margin:0;padding:0;font-family:Arial,sans-serif;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  </style>
+  </head><body>${html}
+  <script>window.onload=function(){setTimeout(()=>window.print(),300);}<\/script></body></html>`);
+  win.document.close();
+}
+
+// ═══ DOCX — proper Word XML blob ═══
+function doExportDocx(type){
+  if(type==='inv'&&!adminOn){alert('Admin login required.');return;}
+  if(type==='inv')commitInv();
+  const d=getData();
+  const isBA=type==='ba';
+  const fn=isBA?`Billing_Advice_${d.clientName||'JAA'}_${d.fy||'FY'}.docx`:`Invoice_${d.invoiceNo||'JAA'}_${d.clientName||'client'}.docx`;
+
+  // Build clean plain-text table rows for DOCX
+  const f2=v=>'Rs.'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const rows = isBA ? buildBARows(d,f2) : buildInvRows(d,f2);
+
+  const xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+  xmlns:mo="http://schemas.microsoft.com/office/mac/office/2008/main"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:mv="urn:schemas-microsoft-com:mac:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+  xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup"
+  xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk"
+  xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"
+  xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+  mc:Ignorable="w14 wp14">
+<w:body>
+<w:p><w:pPr><w:jc w:val="center"/><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${xmlT(d.firm||'JAA')}</w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/><w:color w:val="6b7280"/></w:rPr><w:t>Cost Accountants &amp; Consultants, Mumbai</w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t>${isBA?'BILLING ADVICE':'TAX INVOICE'}</w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="9ca3af"/></w:rPr><w:t>Ref: ${xmlT(d.invoiceNo||'Pending')} | Date: ${xmlT(d.invoiceDate)}</w:t></w:r></w:p>
+<w:p><w:r><w:t> </w:t></w:r></w:p>
+<w:tbl>
+<w:tblPr><w:tblW w:w="9020" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="e5e7eb"/><w:left w:val="none"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="e5e7eb"/><w:right w:val="none"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="e5e7eb"/><w:insideV w:val="none"/></w:tblBorders></w:tblPr>
+${rows}
+</w:tbl>
+<w:p><w:r><w:t> </w:t></w:r></w:p>
+<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="6" w:space="1" w:color="c9a84c"/></w:pBdr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="c9a84c"/></w:rPr><w:t>ADMIN ONLY</w:t></w:r></w:p>
+<w:p><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>Invoice Number: ${xmlT(d.invoiceNo||'—')}     Date of Issue: ${xmlT(d.invoiceDate)}     Issued By: ${xmlT(d.adminIssuer||'—')}     Initials: ${xmlT(d.adminInit||'—')}</w:t></w:r></w:p>
+<w:p><w:r><w:t> </w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>Advice from (Partner): ${xmlT(d.advicePartner||'—')}     Date: ${xmlT(d.adviceDate)}</w:t></w:r></w:p>
+<w:sectPr><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr>
+</w:body></w:document>`;
+
+  const rel=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const wordRel=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style></w:styles>`;
+
+  // Build DOCX zip manually using base64 trick
+  buildAndDownloadDocx({
+    '[Content_Types].xml': contentTypes,
+    '_rels/.rels': rel,
+    'word/_rels/document.xml.rels': wordRel,
+    'word/document.xml': xml,
+    'word/styles.xml': styles,
+  }, fn);
+}
+
+function xmlT(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function buildBARows(d,f2){
+  const row=(n,l,v)=>wRow(n,l,v);
+  const rows=[
+    row('1','Firm Name for Bill',d.firm||'—'),
+    row('2','Name & Address of Company',d.clientName+(d.clientAddr?'\n'+d.clientAddr:'')+'\nApplicable Tax: '+d.taxType),
+    row('3','Date of Cost Audit Report / Certificate',d.auditDate+' | No. of Items: '+(d.numItems||'—')),
+    row('4','UDIN / First Time Client / FY','UDIN: '+d.udin+' | First Time: '+d.firstTime+' | FY: '+(d.fy||'—')),
+    row('5','Particulars of Professional Service',d.serviceDesc||'—'),
+    row('6','XBRL Pages & Partner / Associate','XBRL: '+(d.xbrl||'0')+' | 1. '+(d.partner1||'—')+' 2. '+(d.partner2||'—')),
+    row('7','Trainee Assisted','1. '+(d.trainee1||'—')+' | 2. '+(d.trainee2||'—')+' | 3. '+(d.trainee3||'—')),
+    row('8','Months - OOP Incurred',d.months||'—'),
+    row('9','OOP of Trainee',(d.tOOP1||d.trainee1?'1. '+(d.trainee1||'T1')+': '+f2(d.tOOP1)+' | ':'')+(d.tOOP2||d.trainee2?'2. '+(d.trainee2||'T2')+': '+f2(d.tOOP2)+' | ':'')+(d.tOOP3||d.trainee3?'3. '+(d.trainee3||'T3')+': '+f2(d.tOOP3):'—')),
+    row('10','OOP of Partner / Associate / CMA',(d.pOOP1||d.partner1?'1. '+(d.partner1||'P1')+': '+f2(d.pOOP1)+' | ':'')+(d.pOOP2||d.partner2?'2. '+(d.partner2||'P2')+': '+f2(d.pOOP2):'—')),
+    row('11','Who Filed CRA2 / CRA4','CRA2: '+d.cra2By+' | CRA4: '+d.cra4By),
+    row('12','SRN of CRA2 & CRA4 (Filed by JAA)','CRA2: '+(d.srnCRA2||'—')+' | CRA4: '+(d.srnCRA4||'—')),
+    row('13','Cost of Filing by JAA','CRA2: '+f2(d.cra2Cost)+' | CRA4: '+f2(d.cra4Cost)),
+    row('14','Concerned Person - Bill to be Sent','Name: '+(d.contactName||'—')+' | Designation: '+(d.contactDesig||'—')),
+  ];
+  if(d.additionalInfo)rows.push(row('15','Any Other / Additional Information',d.additionalInfo));
+  return rows.join('');
+}
+function buildInvRows(d,f2){
+  const f=v=>v.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const rows=[
+    wRow('','Client',d.clientName+(d.clientAddr?'\n'+d.clientAddr:'')),
+    wRow('','Client GSTIN',d.clientGSTIN||'—'),
+    wRow('','Invoice Number',d.invoiceNo||'—'),
+    wRow('','Invoice Date',d.invoiceDate),
+    wRow('','Financial Year',d.fy||'—'),
+    wRow('','Service Description',d.serviceDesc||'—'),
+    wRow('','GST Type',d.taxType),
+    wRow('','Professional Fee','Rs.'+f(d.fee)),
+    d.oop>0?wRow('','Out of Pocket Expenses','Rs.'+f(d.oop)):'',
+    d.fil>0?wRow('','Filing Charges (CRA2/CRA4)','Rs.'+f(d.fil)):'',
+    wRow('','Taxable Amount','Rs.'+f(d.tax)),
+    d.intra?wRow('',`CGST @ ${d.r/2}%`,'Rs.'+f(d.gst/2)):'',
+    d.intra?wRow('',`SGST @ ${d.r/2}%`,'Rs.'+f(d.gst/2)):'',
+    !d.intra&&d.r>0?wRow('',`IGST @ ${d.r}%`,'Rs.'+f(d.gst)):'',
+    wHRow('','TOTAL PAYABLE','Rs.'+f(d.tot)),
+  ];
+  return rows.join('');
+}
+function wRow(n,l,v){return`<w:tr><w:tc><w:tcPr><w:tcW w:w="500" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:sz w:val="18"/><w:color w:val="0d2647"/></w:rPr><w:t>${xmlT(n)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="6b7280"/></w:rPr><w:t xml:space="preserve">${xmlT(l)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="5020" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">${xmlT(v)}</w:t></w:r></w:p></w:tc></w:tr>`;}
+function wHRow(n,l,v){return`<w:tr><w:tc><w:tcPr><w:tcW w:w="500" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="0d2647"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="ffffff"/></w:rPr><w:t>${xmlT(n)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="0d2647"/></w:tcPr><w:p><w:r><w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="ffffff"/></w:rPr><w:t xml:space="preserve">${xmlT(l)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="5020" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="0d2647"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="c9a84c"/></w:rPr><w:t xml:space="preserve">${xmlT(v)}</w:t></w:r></w:p></w:tc></w:tr>`;}
+
+// ═══ DOCX ZIP builder (no external library) ═══
+function buildAndDownloadDocx(files, filename){
+  // Use a simple approach: encode each file and build a minimal ZIP
+  const parts=[];
+  for(const[path,content]of Object.entries(files)){
+    const bytes=new TextEncoder().encode(content);
+    parts.push({path,bytes});
+  }
+  const zip=buildZip(parts);
+  const blob=new Blob([zip],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function buildZip(entries){
+  const crcTable=makeCRCTable();
+  const fileRecords=[];
+  const centralDir=[];
+  let offset=0;
+  for(const{path,bytes}of entries){
+    const nameBytes=new TextEncoder().encode(path);
+    const crc=crc32(crcTable,bytes);
+    const localHeader=new Uint8Array(30+nameBytes.length);
+    const lv=new DataView(localHeader.buffer);
+    lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0,true);lv.setUint16(8,0,true);lv.setUint16(10,0,true);lv.setUint16(12,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,bytes.length,true);lv.setUint32(22,bytes.length,true);lv.setUint16(26,nameBytes.length,true);lv.setUint16(28,0,true);
+    localHeader.set(nameBytes,30);
+    const cdEntry=new Uint8Array(46+nameBytes.length);
+    const cv=new DataView(cdEntry.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,bytes.length,true);cv.setUint32(24,bytes.length,true);cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);
+    cdEntry.set(nameBytes,46);
+    fileRecords.push(localHeader,bytes);
+    centralDir.push(cdEntry);
+    offset+=localHeader.length+bytes.length;
+  }
+  const cdSize=centralDir.reduce((s,b)=>s+b.length,0);
+  const eocd=new Uint8Array(22);
+  const ev=new DataView(eocd.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,entries.length,true);ev.setUint16(10,entries.length,true);ev.setUint32(12,cdSize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+  const all=[...fileRecords,...centralDir,eocd];
+  const total=all.reduce((s,b)=>s+b.length,0);
+  const out=new Uint8Array(total);let pos=0;
+  for(const b of all){out.set(b,pos);pos+=b.length;}
+  return out;
+}
+function makeCRCTable(){const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?(0xEDB88320^(c>>>1)):c>>>1;t[i]=c;}return t;}
+function crc32(t,buf){let c=0xFFFFFFFF;for(const b of buf)c=t[(c^b)&0xFF]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+
+// ═══ MISC ═══
+function closeM(id){document.getElementById(id).classList.remove('active');}
+['pwdModal','cmModal'].forEach(id=>document.getElementById(id).addEventListener('click',function(ev){if(ev.target===this)closeM(id);}));
+function clearForm(){
+  document.querySelectorAll("input[type=text],input[type=number],input[type=date],textarea,select").forEach(el=>el.value="");
+  document.getElementById("invoiceDate").valueAsDate=new Date();
+  document.getElementById("adviceDate").valueAsDate=new Date();
+  document.getElementById("firmOtherWrap").style.display="none";
+  toggleFiling(); // reset CRA field visibility
+  document.getElementById("acBadge").style.display="none";
+  document.getElementById("gstinSaveBtn").style.display="none";
+  document.getElementById("invTag").style.display="none";
+  document.getElementById("saveIndicator").textContent="No draft saved yet";
+  document.getElementById("saveIndicator").style.color="#8a99b0";
+  invManual=false;closeAC();
+}
+
+init();
+</script>
+</body>
+</html>

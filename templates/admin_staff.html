@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Manage Staff — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Manage Staff</span>
+  <span class="topbar-sub">{{ employees|length }} employees</span>
+  <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('add-staff-modal')">➕ Add Employee</button>
+</div>
+<div class="page-content">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">👥 All Staff</span>
+      <input type="text" id="search" class="form-control" placeholder="🔍 Search..." style="width:200px;padding:7px 12px" oninput="filterTable()">
+    </div>
+    <div class="table-wrap">
+      <table id="staff-table">
+        <thead><tr>
+          <th>EMP ID</th><th>Name</th><th>Role</th><th>Status</th>
+          <th>Join Date</th><th>Birthday</th><th>Reports To</th><th>Company Assignments</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for emp in employees %}
+          <tr>
+            <td style="font-family:monospace;font-weight:600;color:var(--teal)">{{ emp.emp_id }}</td>
+            <td style="font-weight:600">{{ emp.full_name }}</td>
+            <td><span class="badge badge-navy">{{ emp.role }}</span></td>
+            <td>
+              {% if emp.status=='Active' %}<span class="badge badge-success">● Active</span>
+              {% elif emp.status=='Inactive' %}<span class="badge badge-warning">● Inactive</span>
+              {% else %}<span class="badge badge-gray">● {{ emp.status }}</span>{% endif %}
+            </td>
+            <td style="color:var(--text-mid)">{{ emp.join_date or '—' }}</td>
+            <td style="color:var(--teal)">
+              {% if emp.date_of_birth %}
+                {% set mm, dd = emp.date_of_birth.split('-') %}
+                {{ dd }} {{ ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mm|int] }}
+              {% else %}—{% endif %}
+            </td>
+            <td style="color:var(--text-mid)">{{ emp.reporting_to or '—' }}</td>
+            <td style="font-size:12px;color:var(--text-mid)">
+              {% if emp.role=='Intern' and emp.internship_end_date %}
+              📅 {{ emp.internship_end_date }}
+              {% elif emp.role=='Intern' and emp.join_date %}
+              📅 ~15m from {{ emp.join_date }}
+              {% else %}—{% endif %}
+            </td>
+            <td style="font-size:12px;max-width:200px">
+              {% if emp_assignments and emp.emp_id in emp_assignments %}
+                {% for a in emp_assignments[emp.emp_id] %}
+                  <span style="display:inline-block;background:rgba(13,33,55,.08);border-radius:4px;padding:1px 6px;margin:1px 2px;white-space:nowrap">
+                    {{ a.company_name or a.company_code }}
+                    {% if a.partner_name %}<span style="color:var(--text-light)"> · {{ a.partner_name }}</span>{% endif %}
+                  </span>
+                {% endfor %}
+              {% else %}
+                <span style="color:var(--text-light)">—</span>
+              {% endif %}
+            </td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openEdit('{{ emp.emp_id }}','{{ emp.full_name }}','{{ emp.role }}','{{ emp.status }}','{{ emp.reporting_to or '' }}','{{ emp.date_of_birth or '' }}','{{ emp.join_date or '' }}','{{ emp.internship_end_date or '' }}','{{ emp.extension_note or '' }}')">✏ Edit</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal-overlay" id="add-staff-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add New Employee</span>
+      <button class="modal-close" onclick="closeModal('add-staff-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">EMP ID *</label><input class="form-control" id="new-id" placeholder="JAA00000055"></div>
+        <div class="form-group"><label class="form-label">Full Name *</label><input class="form-control" id="new-name"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-control" id="new-role">
+            <option>Intern</option><option>Employee</option><option>Associate</option><option>Partner</option><option>Admin</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Reports To</label>
+          <select class="form-control" id="new-reporting">
+            {% for opt in reporting_opts %}<option>{{ opt }}</option>{% endfor %}
+          </select></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Join Date</label><input type="date" class="form-control" id="new-jd"></div>
+        <div class="form-group"><label class="form-label">Date of Birth (DD-MM-YYYY)</label><input class="form-control" id="new-dob" placeholder="15-08-2000"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-staff-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addStaff()">➕ Add Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Staff Modal -->
+<div class="modal-overlay" id="edit-staff-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏ Edit Employee</span>
+      <button class="modal-close" onclick="closeModal('edit-staff-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" id="edit-name"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-control" id="edit-role">
+            <option>Intern</option><option>Employee</option><option>Associate</option><option>Partner</option><option>Admin</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" id="edit-status">
+            <option>Active</option><option>Inactive</option><option>Completed</option>
+          </select></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Reports To</label>
+          <select class="form-control" id="edit-reporting">
+            {% for opt in reporting_opts %}<option>{{ opt }}</option>{% endfor %}
+          </select></div>
+        <div class="form-group"><label class="form-label">Date of Birth (DD-MM-YYYY)</label><input class="form-control" id="edit-dob" placeholder="15-08-2000"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Join Date</label><input type="date" class="form-control" id="edit-jd"></div>
+    </div>
+    <div id="intern-ext-section" style="display:none">
+      <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:#78350F;margin-bottom:10px">🎓 Intern Extension (optional)</div>
+        <div class="grid-2">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Custom End Date</label>
+            <input type="date" class="form-control" id="edit-intern-end" placeholder="Leave blank for default (15 months)">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Extension Reason / Note</label>
+            <input class="form-control" id="edit-intern-note" placeholder="e.g. Extended by 3 months">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-staff-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#staff-table tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function openEdit(id,name,role,status,reporting,dob,jd,internEnd,internNote) {
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-role').value = role;
+  document.getElementById('edit-status').value = status;
+  document.getElementById('edit-reporting').value = reporting;
+  document.getElementById('edit-dob').value = dob;
+  document.getElementById('edit-jd').value = jd;
+  document.getElementById('edit-intern-end').value  = internEnd  || '';
+  document.getElementById('edit-intern-note').value = internNote || '';
+  // Show intern extension only for Intern role
+  document.getElementById('intern-ext-section').style.display = role === 'Intern' ? '' : 'none';
+  openModal('edit-staff-modal');
+}
+async function addStaff() {
+  const id = document.getElementById('new-id').value.trim().toUpperCase();
+  const name = document.getElementById('new-name').value.trim();
+  if (!id || !name) { toast('EMP ID and Name required.','warning'); return; }
+  const r = await api('/api/staff/add', {
+    emp_id:id, full_name:name,
+    role:document.getElementById('new-role').value,
+    reporting_to:document.getElementById('new-reporting').value,
+    join_date:document.getElementById('new-jd').value,
+    date_of_birth:document.getElementById('new-dob').value,
+  });
+  if (r.ok) { toast('Employee added!','success'); closeModal('add-staff-modal'); setTimeout(()=>location.reload(),800); }
+  else       { toast('EMP ID already exists or error.','error'); }
+}
+async function saveEdit() {
+  const empId = document.getElementById('edit-id').value;
+  const r = await api('/api/staff/update', {
+    emp_id:empId,
+    full_name:document.getElementById('edit-name').value,
+    role:document.getElementById('edit-role').value,
+    status:document.getElementById('edit-status').value,
+    reporting_to:document.getElementById('edit-reporting').value,
+    date_of_birth:document.getElementById('edit-dob').value,
+    join_date:document.getElementById('edit-jd').value,
+  });
+  // Save extension if intern section visible
+  const extSection = document.getElementById('intern-ext-section');
+  if (extSection.style.display !== 'none') {
+    await api('/api/staff/set-extension', {
+      emp_id: empId,
+      internship_end_date: document.getElementById('edit-intern-end').value || null,
+      extension_note: document.getElementById('edit-intern-note').value || null,
+    });
+  }
+  if (r.ok) { toast('Saved!','success'); closeModal('edit-staff-modal'); setTimeout(()=>location.reload(),800); }
+  else       { toast('Save failed.','error'); }
+}
+</script>
+{% endblock %}

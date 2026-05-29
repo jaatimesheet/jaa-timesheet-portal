@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Reimbursements — Admin — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.rbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700 }
+.rb-pending  { background:#FEF3C7;color:#92400E }
+.rb-approved { background:#D1FAE5;color:#065F46 }
+.rb-rejected { background:#FEE2E2;color:#991B1B }
+
+.filter-bar {
+  background:#fff;border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:18px;
+  display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+}
+.filter-bar select, .filter-bar input {
+  padding:7px 11px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-family:'DM Sans',sans-serif;font-size:13px;background:#fff;
+  outline:none;color:var(--text);cursor:pointer;
+}
+.filter-bar select:focus { border-color:var(--teal) }
+.filter-bar .fl { display:flex;flex-direction:column;gap:4px }
+.filter-bar .fl label { font-size:11px;font-weight:600;color:var(--text-mid);letter-spacing:.3px }
+.btn-filter { padding:7px 16px;border:none;border-radius:var(--r-sm);background:var(--navy);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer }
+.btn-clear  { padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:#fff;color:var(--text-mid);font-size:13px;font-weight:600;cursor:pointer }
+
+.at-table { width:100%;border-collapse:collapse;font-size:13px }
+.at-table th {
+  text-align:left;padding:10px 12px;font-size:11px;font-weight:700;
+  color:var(--text-light);letter-spacing:.6px;text-transform:uppercase;
+  background:var(--surface);border-bottom:2px solid var(--border);white-space:nowrap;
+}
+.at-table td { padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle }
+.at-table tr:last-child td { border-bottom:none }
+.at-table tr:hover td { background:var(--surface) }
+
+.btn-sm { padding:4px 11px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s }
+.btn-approve { background:#D1FAE5;color:#065F46 }
+.btn-approve:hover { background:#A7F3D0 }
+.btn-reject  { background:#FEE2E2;color:#991B1B }
+.btn-reject:hover  { background:#FCA5A5 }
+
+/* ── Rejection modal ─────────────────────────────────────────────────────── */
+.modal.rej-modal { width:440px;max-width:96vw }
+.rej-modal .modal-header { background:linear-gradient(135deg,#991B1B,#B91C1C);border-radius:16px 16px 0 0;border-bottom:none }
+.rej-modal .modal-title  { color:#fff }
+.rej-modal .modal-close  { background:rgba(255,255,255,.15);color:#fff }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#ar-toast { position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 18px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;background:var(--navy);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .25s;pointer-events:none }
+#ar-toast.show { opacity:1 }
+#ar-toast.ok  { background:#065F46 }
+#ar-toast.err { background:#991B1B }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Reimbursements</span>
+  <a href="/admin/reimbursements/export" class="btn btn-ghost" style="font-size:13px">📥 Export Excel</a>
+</div>
+
+<div class="page-content">
+
+  <!-- KPIs -->
+  {% set total    = all_r|length %}
+  {% set pending_n = all_r | selectattr('status','equalto','Pending')  | list | length %}
+  {% set approved_n = all_r | selectattr('status','equalto','Approved') | list | length %}
+  {% set rejected_n = all_r | selectattr('status','equalto','Rejected') | list | length %}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+    {% for label, val, color in [('Total', total, 'var(--teal)'), ('Pending', pending_n, 'var(--gold)'), ('Approved', approved_n, '#10B981'), ('Rejected', rejected_n, '#DC2626')] %}
+    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ color }}"></div>
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:{{ color }};line-height:1">{{ val }}</div>
+      <div style="font-size:11.5px;color:var(--text-light);margin-top:4px">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" action="/admin/reimbursements" class="filter-bar">
+    <div class="fl">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All</option>
+        {% for s in ['Pending','Approved','Rejected'] %}
+        <option value="{{ s }}" {% if f_status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fl">
+      <label>Company</label>
+      <select name="company">
+        <option value="">All Companies</option>
+        {% for co in all_cos %}
+        <option value="{{ co.unique_code }}" {% if f_co==co.unique_code %}selected{% endif %}>{{ co.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fl">
+      <label>Employee</label>
+      <select name="emp">
+        <option value="">All Employees</option>
+        {% for e in all_emps %}
+        <option value="{{ e.emp_id }}" {% if f_emp==e.emp_id %}selected{% endif %}>{{ e.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-filter">Filter</button>
+    <a href="/admin/reimbursements" class="btn-clear">Clear</a>
+  </form>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Reimbursements</span>
+      <span style="font-size:12px;color:var(--text-light)">{{ reimbs|length }} result{{ 's' if reimbs|length!=1 else '' }}</span>
+    </div>
+    {% if reimbs %}
+    <div class="table-wrap">
+      <table class="at-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Company</th>
+            <th>Category</th>
+            <th>Sub-Cat</th>
+            <th>Amount</th>
+            <th>Receipt</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reimbs %}
+          <tr id="row-{{ r.id }}">
+            <td>
+              <div style="font-weight:600">{{ r.emp_name }}</div>
+              <div style="font-size:11px;color:var(--text-light)">{{ r.emp_role }}</div>
+            </td>
+            <td style="color:var(--text-mid)">{{ r.company_name }}</td>
+            <td>{{ r.category }}</td>
+            <td style="color:var(--text-light)">{{ r.sub_category or '—' }}</td>
+            <td style="font-weight:700;color:var(--navy)">₹{{ "%.2f"|format(r.amount) }}</td>
+            <td>
+              {% if r.receipt_path %}
+              <a href="/reimbursements/receipt/{{ r.id }}" target="_blank"
+                 style="color:var(--teal);font-size:12px;font-weight:600">📎 View</a>
+              {% else %}—{% endif %}
+            </td>
+            <td style="color:var(--text-mid);font-size:12px;white-space:nowrap">{{ r.submitted_at[:10] }}</td>
+            <td>
+              <span class="rbadge rb-{{ r.status|lower }}">{{ r.status }}</span>
+              {% if r.status == 'Rejected' and r.rejection_note %}
+              <div style="font-size:11px;color:#DC2626;margin-top:3px" title="{{ r.rejection_note }}">
+                {{ r.rejection_note[:40] }}{% if r.rejection_note|length > 40 %}…{% endif %}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.status == 'Pending' %}
+              <div style="display:flex;gap:6px">
+                <button class="btn-sm btn-approve" onclick="approveReimb({{ r.id }})">✓ Approve</button>
+                <button class="btn-sm btn-reject"  onclick="openReject({{ r.id }})">✕ Reject</button>
+              </div>
+              {% else %}
+              <span style="font-size:12px;color:var(--text-light)">{{ r.reviewed_by or '—' }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:48px 20px;color:var(--text-light)">
+      <div style="font-size:36px;margin-bottom:10px">💸</div>
+      <div>No reimbursements found.</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /page-content -->
+
+
+<!-- ── Rejection Modal ────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="rej-overlay" onclick="rejOverlayClick(event)">
+  <div class="modal rej-modal">
+    <div class="modal-header">
+      <div class="modal-title">✕ Reject Reimbursement</div>
+      <button class="modal-close" onclick="closeRejModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:var(--text-mid);margin-bottom:12px">
+        Provide a clear reason so the employee can correct and resubmit.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Rejection Reason *</label>
+        <textarea id="rej-note" class="form-control" rows="3"
+                  style="resize:vertical;height:auto"
+                  placeholder="e.g. Receipt missing, amount exceeds limit…"></textarea>
+      </div>
+      <div id="rej-error" style="color:#991B1B;font-size:13px;margin-top:4px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRejModal()">Cancel</button>
+      <button class="btn" style="background:#DC2626;color:#fff;font-weight:700" onclick="submitRejection()">Reject →</button>
+    </div>
+  </div>
+</div>
+
+<div id="ar-toast"></div>
+
+<script>
+let rejectingId = null;
+
+function approveReimb(id){
+  if(!confirm('Approve this reimbursement?')) return;
+  fetch('/api/reimbursement/approve', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({reimbursement_id: id})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.ok){ showToast('✓ Approved'); setTimeout(()=>location.reload(),700); }
+    else showToast('✗ '+(d.error||'Error'),'err');
+  });
+}
+
+function openReject(id){
+  rejectingId = id;
+  document.getElementById('rej-note').value='';
+  document.getElementById('rej-error').style.display='none';
+  document.getElementById('rej-overlay').classList.add('open');
+}
+function closeRejModal(){ document.getElementById('rej-overlay').classList.remove('open'); rejectingId=null; }
+function rejOverlayClick(e){ if(e.target===document.getElementById('rej-overlay')) closeRejModal(); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeRejModal(); });
+
+function submitRejection(){
+  const note = document.getElementById('rej-note').value.trim();
+  const errEl = document.getElementById('rej-error');
+  if(!note){ errEl.textContent='Rejection reason is required.'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  fetch('/api/reimbursement/reject', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({reimbursement_id: rejectingId, rejection_note: note})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.ok){ showToast('✓ Rejected'); closeRejModal(); setTimeout(()=>location.reload(),700); }
+    else{ errEl.textContent=d.error||'Error'; errEl.style.display='block'; }
+  });
+}
+
+function showToast(msg,type='ok'){
+  const t=document.getElementById('ar-toast');
+  t.textContent=msg; t.className='show '+type;
+  setTimeout(()=>{ t.className=''; },3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Manage Leaves — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Manage Leaves</span>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    {% for s in ['Pending','Approved','Rejected','All'] %}
+    <a href="/admin/leaves?status={{ s }}" class="btn {{ 'btn-primary' if status_filter==s else 'btn-ghost' }} btn-sm">{{ s }}</a>
+    {% endfor %}
+  </div>
+</div>
+<div class="page-content">
+  <div class="card">
+    <div class="card-header"><span class="card-title">🏖 Leave Requests</span><span class="badge badge-navy">{{ leaves|length }}</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td style="font-weight:600">{{ l.full_name or l.emp_id }}</td>
+          <td><span class="badge badge-info">{{ l.leave_type or 'Leave' }}</span></td>
+          <td>{{ l.start_date }}</td><td>{{ l.end_date }}</td>
+          <td style="color:var(--text-mid)">{{ l.reason or '—' }}</td>
+          <td>
+            {% if l.status=='Approved' %}<span class="badge badge-success">✓ Approved</span>
+            {% elif l.status=='Rejected' %}<span class="badge badge-danger">✕ Rejected</span>
+            {% else %}<span class="badge badge-warning">⏳ Pending</span>{% endif %}
+          </td>
+          <td>
+            {% if l.status=='Pending' %}
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-success btn-sm" onclick="approveLeave({{ l.id }},'Approved')">✓</button>
+              <button class="btn btn-danger btn-sm" onclick="approveLeave({{ l.id }},'Rejected')">✕</button>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text-light)">No leave requests.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function approveLeave(id,status) {
+  const r = await api('/api/leave/approve',{leave_id:id,status});
+  if(r.ok){toast(status+'!','success');setTimeout(()=>location.reload(),800);}
+  else toast('Failed.','error');
+}
+</script>
+{% endblock %}

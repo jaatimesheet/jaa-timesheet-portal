@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partner Login — JAA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+body{background:var(--navy);display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.sa-card{background:#fff;border-radius:20px;width:420px;max-width:95vw;padding:52px 44px;box-shadow:0 24px 80px rgba(0,0,0,.4);text-align:center}
+.sa-logo{width:72px;height:72px;background:linear-gradient(135deg,var(--gold),var(--gold-lt));border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);font-weight:700;margin:0 auto 24px;box-shadow:0 8px 24px rgba(201,168,76,.35)}
+.sa-title{font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin-bottom:6px}
+.sa-sub{font-size:13.5px;color:var(--text-light);margin-bottom:32px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:7px;letter-spacing:.3px;text-align:left}
+.form-control{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:15px;letter-spacing:4px;text-align:center;color:var(--text);background:#fff;outline:none;transition:border-color .15s;box-sizing:border-box;margin-bottom:6px}
+.form-control:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(13,38,71,.1)}
+.btn-sa{width:100%;padding:14px;border:none;border-radius:var(--r-sm);background:linear-gradient(135deg,#0d2647,#162d52);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;transition:all .2s}
+.btn-sa:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(11,31,58,.3)}
+.error-msg{background:#FEF2F2;color:#991B1B;border:1px solid #FCA5A5;border-radius:var(--r-sm);padding:10px 14px;font-size:13px;margin-bottom:18px;text-align:left}
+.back-link{display:block;margin-top:20px;font-size:13px;color:var(--text-light);text-decoration:none}
+.back-link:hover{color:var(--navy)}
+.badge{display:inline-block;background:rgba(201,168,76,.15);color:#92720a;font-size:11px;font-weight:700;letter-spacing:.8px;padding:3px 10px;border-radius:20px;margin-bottom:10px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="sa-card">
+  <div class="sa-logo">JAA</div>
+  <div class="badge">Partner Access</div>
+  <div class="sa-title">Super Admin</div>
+  <div class="sa-sub">Access all branches and consolidated data</div>
+
+  {% if error %}
+  <div class="error-msg">⚠ {{ error }}</div>
+  {% endif %}
+  {% if timeout %}
+  <div class="error-msg" style="background:#FEF3C7;color:#78350F;border-color:#FCD34D">⏱ Session expired. Please log in again.</div>
+  {% endif %}
+
+  <form method="POST">
+    <label class="form-label">Super Admin PIN</label>
+    <input type="password" name="pin" class="form-control" maxlength="6"
+           placeholder="• • • •" autofocus>
+    <button type="submit" class="btn-sa">Enter →</button>
+  </form>
+  <a href="/login" class="back-link">← Back to Branch Login</a>
+</div>
+</body>
+</html>

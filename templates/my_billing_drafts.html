@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}My Billing Drafts — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.drafts-wrap { max-width:800px;margin:0 auto;padding:28px 20px 60px }
+.sec-hdr  { display:flex;align-items:center;gap:10px;margin:0 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border) }
+.sec-hdr h3 { font-family:'DM Serif Display',serif;font-size:18px;color:var(--navy);margin:0 }
+.sec-count  { background:var(--surface);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;color:var(--text-mid) }
+
+.draft-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--r);padding:16px 18px;
+              margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s }
+.draft-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07) }
+.draft-card.finalized { border-left:4px solid #10B981 }
+.draft-card.draft     { border-left:4px solid var(--gold) }
+.draft-icon  { width:42px;height:42px;background:var(--surface);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0 }
+.draft-body  { flex:1;min-width:0 }
+.draft-title { font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px }
+.draft-meta  { font-size:12px;color:var(--text-light);display:flex;gap:12px;flex-wrap:wrap }
+.draft-actions { display:flex;gap:8px;flex-shrink:0 }
+
+.sbadge { display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:700 }
+.s-draft     { background:#FEF3C7;color:#92400E }
+.s-finalized { background:#D1FAE5;color:#065F46 }
+
+.btn-del { padding:7px 12px;border-radius:var(--r-sm);background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;
+           font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer }
+.btn-del:hover { background:#FECACA }
+.empty-state { text-align:center;padding:60px 20px;background:#fff;border:1px solid var(--border);border-radius:var(--r) }
+
+#del-toast { position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:9px 17px;
+             border-radius:var(--r-sm);font-size:13px;font-weight:500;z-index:9999;
+             opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Billing Drafts</span>
+  <a href="/my-billing" class="btn btn-gold">➕ New Billing Advice</a>
+</div>
+
+<div id="del-toast"></div>
+
+<div class="drafts-wrap">
+  <div class="sec-hdr">
+    <h3>📄 Submitted Billing Advice</h3>
+    <span class="sec-count">{{ drafts|length }}</span>
+  </div>
+
+  {% if drafts %}
+    {% for d in drafts %}
+    <div class="draft-card {{ d.status }}" id="dcard-{{ d.id }}">
+      <div class="draft-icon">{% if d.status == 'finalized' %}✅{% else %}📋{% endif %}</div>
+      <div class="draft-body">
+        <div class="draft-title">
+          {{ d.company_name }} · FY {{ d.fy or '—' }}
+          {% if d.firm_name %}<span style="color:var(--text-light);font-weight:400"> · {{ d.firm_name }}</span>{% endif %}
+        </div>
+        <div class="draft-meta">
+          <span>📅 {{ d.submitted_at[:10] }}</span>
+          {% if d.status == 'finalized' %}
+            <span style="color:#065F46;font-weight:600">🧾 Invoice: {{ d.invoice_no or '—' }}</span>
+            <span>📆 {{ d.invoice_date or '' }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="draft-actions">
+        <span class="sbadge s-{{ d.status }}">{{ d.status.capitalize() }}</span>
+        {% if d.status == 'draft' %}
+        <button class="btn-del" onclick="deleteDraft({{ d.id }}, this)">🗑</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:40px;margin-bottom:12px">📭</div>
+    <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:6px">No billing advice submitted yet</div>
+    <div style="font-size:13px;color:var(--text-light)">Submit your first billing advice using the button above.</div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function deleteDraft(id, btn) {
+  if (!confirm('Delete this billing advice draft? This cannot be undone.')) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/billing/advice/delete/${id}`, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) {
+      const card = document.getElementById('dcard-' + id);
+      card.style.opacity = '0'; card.style.transition = 'opacity .3s';
+      setTimeout(() => card.remove(), 300);
+      showToast('✓ Draft deleted');
+    } else {
+      showToast('✗ ' + (d.error || 'Could not delete')); btn.disabled = false;
+    }
+  } catch { btn.disabled = false; }
+}
+function showToast(msg) {
+  const t = document.getElementById('del-toast');
+  t.textContent = msg; t.style.opacity='1'; t.style.transform='translateY(0)';
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(10px)'; }, 2200);
+}
+</script>
+{% endblock %}

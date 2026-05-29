@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Reimbursement Report — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page layout ─────────────────────────────────────────────────────────── */
+.rr-wrap       { padding:24px 28px 60px }
+.rr-toolbar    { display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+                 margin-bottom:22px;background:#fff;
+                 border:1.5px solid var(--border);border-radius:var(--r);
+                 padding:14px 18px }
+.rr-toolbar-label { font-size:12px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.04em }
+.rr-select     { padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+                 font-family:'DM Sans',sans-serif;font-size:13px;color:var(--navy);
+                 background:#fff;outline:none;cursor:pointer;transition:border-color .15s }
+.rr-select:focus { border-color:var(--teal) }
+.rr-divider    { width:1px;height:32px;background:var(--border) }
+
+/* Toggle switch */
+.toggle-wrap   { display:flex;align-items:center;gap:8px;cursor:pointer }
+.toggle-label  { font-size:13px;font-weight:600;color:var(--navy) }
+.toggle        { position:relative;width:40px;height:22px }
+.toggle input  { opacity:0;width:0;height:0 }
+.toggle-slider { position:absolute;inset:0;background:#CBD5E1;border-radius:20px;transition:.2s }
+.toggle-slider::before {
+  content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)
+}
+input:checked + .toggle-slider { background:var(--navy) }
+input:checked + .toggle-slider::before { transform:translateX(18px) }
+
+/* Export button */
+.btn-export-rr { padding:8px 16px;background:var(--gold);color:var(--navy);border:none;
+                 border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;
+                 font-size:12.5px;font-weight:700;cursor:pointer;
+                 display:inline-flex;align-items:center;gap:6px;
+                 text-decoration:none;transition:opacity .15s;margin-left:auto }
+.btn-export-rr:hover { opacity:.85 }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.rr-table-wrap { overflow-x:auto;border-radius:var(--r);border:1.5px solid var(--border) }
+.rr-table      { width:100%;border-collapse:collapse;font-size:13px }
+.rr-table th   { background:var(--navy);color:#fff;font-weight:700;
+                 padding:10px 12px;text-align:center;white-space:nowrap;
+                 border:1px solid rgba(255,255,255,.1) }
+.rr-table td   { padding:9px 12px;border:1px solid var(--border);color:var(--navy);
+                 vertical-align:middle }
+.rr-table tr:hover td { background:#F8FAFC }
+
+/* Company header row */
+.co-hdr td     { background:var(--navy) !important;color:#fff !important;
+                 font-weight:700;font-size:13.5px;padding:9px 14px;
+                 border-color:rgba(255,255,255,.15) !important }
+/* Subtotal row */
+.sub-row td    { background:#FEF9C3 !important;font-weight:700;color:var(--navy) }
+/* Grand total row */
+.grand-row td  { background:var(--navy) !important;color:#fff !important;
+                 font-weight:700;border-color:rgba(255,255,255,.15) !important }
+
+.num           { text-align:right;font-variant-numeric:tabular-nums }
+.center        { text-align:center }
+
+/* Empty state */
+.rr-empty      { text-align:center;padding:48px 20px;color:var(--text-light);font-size:13.5px }
+
+/* Summary cards */
+.rr-cards      { display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px }
+.rr-card       { background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+                 padding:14px 16px }
+.rr-card-label { font-size:11px;font-weight:700;color:var(--text-light);
+                 text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px }
+.rr-card-val   { font-family:'DM Serif Display',serif;font-size:20px;color:var(--navy) }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">Reimbursement Report</span>
+  <span class="topbar-sub" style="font-size:12px;color:var(--text-light)">
+    {% if selected_fy %}FY {{ selected_fy }}{% endif %}
+  </span>
+</div>
+
+<div class="rr-wrap">
+
+  <!-- Toolbar -->
+  <div class="rr-toolbar">
+    <div>
+      <div class="rr-toolbar-label">Financial Year</div>
+      <select class="rr-select" id="fy-select" onchange="reloadPage()">
+        {% if fy_list %}
+          {% for fy in fy_list %}
+          <option value="{{ fy }}" {% if fy == selected_fy %}selected{% endif %}>{{ fy }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">No finalized data</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="rr-divider"></div>
+
+    <label class="toggle-wrap" title="Consolidated View">
+      <input type="checkbox" id="consolidated-toggle"
+             {% if consolidated %}checked{% endif %}
+             onchange="reloadPage()">
+      <span class="toggle"><input type="checkbox" id="consolidated-toggle2"
+             style="display:none"
+             {% if consolidated %}checked{% endif %}>
+        <span class="toggle-slider"></span>
+      </span>
+      <span class="toggle-label">Consolidated View</span>
+    </label>
+
+    <a class="btn-export-rr" id="export-btn"
+       href="/partner/reimbursement-report/export?fy={{ selected_fy }}&consolidated={{ '1' if consolidated else '0' }}">
+      ⬇ Export Excel
+    </a>
+  </div>
+
+  {% if not selected_fy %}
+  <div class="rr-empty">No finalized billing advice records found.</div>
+
+  {% else %}
+
+  <!-- Summary cards -->
+  <div class="rr-cards">
+    <div class="rr-card">
+      <div class="rr-card-label">Travel</div>
+      <div class="rr-card-val">₹{{ "{:,.2f}".format(grand.travel) }}</div>
+    </div>
+    <div class="rr-card">
+      <div class="rr-card-label">Refreshment</div>
+      <div class="rr-card-val">₹{{ "{:,.2f}".format(grand.refreshment) }}</div>
+    </div>
+    <div class="rr-card">
+      <div class="rr-card-label">Others</div>
+      <div class="rr-card-val">₹{{ "{:,.2f}".format(grand.others) }}</div>
+    </div>
+    <div class="rr-card">
+      <div class="rr-card-label">Grand Total OOP</div>
+      <div class="rr-card-val" style="color:var(--gold)">₹{{ "{:,.2f}".format(grand.total) }}</div>
+    </div>
+  </div>
+
+  <!-- ── CONSOLIDATED VIEW ──────────────────────────────────────────────── -->
+  {% if consolidated %}
+    {% if emp_data %}
+    <div class="rr-table-wrap">
+      <table class="rr-table">
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Employee Name</th>
+            <th>Role</th>
+            <th>Travel (₹)</th>
+            <th>Refreshment (₹)</th>
+            <th>Others (₹)</th>
+            <th>Total (₹)</th>
+            <th>No. of Companies</th>
+            <th>No. of Invoices</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in emp_data %}
+          <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td>{{ r.emp_name }}</td>
+            <td>{{ r.role }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(r.travel or 0) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(r.refreshment or 0) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(r.others or 0) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(r.total or 0) }}</td>
+            <td class="center">{{ r.num_companies }}</td>
+            <td class="center">{{ r.num_invoices }}</td>
+          </tr>
+          {% endfor %}
+          <!-- Grand Total -->
+          <tr class="grand-row">
+            <td colspan="3" style="text-align:right;padding-right:16px">Grand Total</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.travel) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.refreshment) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.others) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.total) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="rr-empty">No reimbursement data found for FY {{ selected_fy }}.</div>
+    {% endif %}
+
+  <!-- ── COMPANY-WISE VIEW ──────────────────────────────────────────────── -->
+  {% else %}
+    {% if company_data %}
+    <div class="rr-table-wrap">
+      <table class="rr-table">
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Employee Name</th>
+            <th>Role</th>
+            <th>Travel (₹)</th>
+            <th>Refreshment (₹)</th>
+            <th>Others (₹)</th>
+            <th>Total (₹)</th>
+            <th>Invoice No</th>
+            <th>Invoice Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set sr = namespace(v=0) %}
+          {% for co_name, co in company_data %}
+          <!-- Company header -->
+          <tr class="co-hdr">
+            <td colspan="9">💼 {{ co_name }}</td>
+          </tr>
+          {% for r in co.rows %}
+            {% set sr.v = sr.v + 1 %}
+            <tr>
+              <td class="center">{{ sr.v }}</td>
+              <td>{{ r.emp_name }}</td>
+              <td>{{ r.role }}</td>
+              <td class="num">₹{{ "{:,.2f}".format(r.travel or 0) }}</td>
+              <td class="num">₹{{ "{:,.2f}".format(r.refreshment or 0) }}</td>
+              <td class="num">₹{{ "{:,.2f}".format(r.others or 0) }}</td>
+              <td class="num">₹{{ "{:,.2f}".format(r.total or 0) }}</td>
+              <td>{{ r.invoice_no }}</td>
+              <td class="center">{{ r.invoice_date[:10] if r.invoice_date else '' }}</td>
+            </tr>
+          {% endfor %}
+          <!-- Company subtotal -->
+          <tr class="sub-row">
+            <td colspan="3" style="text-align:right;padding-right:16px">{{ co_name }} — Subtotal</td>
+            <td class="num">₹{{ "{:,.2f}".format(co.sub.travel) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(co.sub.refreshment) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(co.sub.others) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(co.sub.total) }}</td>
+            <td colspan="2"></td>
+          </tr>
+          {% endfor %}
+          <!-- Grand total -->
+          <tr class="grand-row">
+            <td colspan="3" style="text-align:right;padding-right:16px">Grand Total</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.travel) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.refreshment) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.others) }}</td>
+            <td class="num">₹{{ "{:,.2f}".format(grand.total) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="rr-empty">No reimbursement data found for FY {{ selected_fy }}.</div>
+    {% endif %}
+  {% endif %}
+  {% endif %}
+
+</div><!-- /rr-wrap -->
+
+<script>
+function reloadPage() {
+  const fy           = document.getElementById('fy-select').value;
+  const consolidated = document.getElementById('consolidated-toggle').checked ? '1' : '0';
+  window.location    = `/partner/reimbursement-report?fy=${encodeURIComponent(fy)}&consolidated=${consolidated}`;
+}
+
+// Keep export link in sync with current view
+document.getElementById('fy-select').addEventListener('change', updateExport);
+document.getElementById('consolidated-toggle').addEventListener('change', updateExport);
+function updateExport() {
+  const fy = document.getElementById('fy-select').value;
+  const c  = document.getElementById('consolidated-toggle').checked ? '1' : '0';
+  document.getElementById('export-btn').href =
+    `/partner/reimbursement-report/export?fy=${encodeURIComponent(fy)}&consolidated=${c}`;
+}
+
+// Fix: sync the visible toggle with the hidden checkbox
+document.getElementById('consolidated-toggle').addEventListener('change', function() {
+  document.getElementById('consolidated-toggle2').checked = this.checked;
+});
+</script>
+{% endblock %}

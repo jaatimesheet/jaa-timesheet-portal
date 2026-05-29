@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Entries — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Entries</span>
+  <div style="margin-left:auto;display:flex;gap:10px">
+    <input type="date" id="filter-date" class="form-control" style="width:160px;padding:7px 12px" value="{{ filter_date }}">
+    <button class="btn btn-primary btn-sm" onclick="location.href='/my-entries?date='+document.getElementById('filter-date').value">🔍 Filter</button>
+    <button class="btn btn-ghost btn-sm" onclick="location.href='/my-entries'">All</button>
+  </div>
+</div>
+<div class="page-content">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 Timesheet History</span>
+      <span class="badge badge-navy">{{ entries|length }} entries</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Day</th><th>Category</th><th>Op. Area</th>
+          <th>Start</th><th>End</th><th>Hrs</th><th>Task</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          {% if entries %}
+          {% for e in entries %}
+          <tr>
+            <td style="font-weight:600">{{ e.entry_date }}</td>
+            <td style="color:var(--text-light)">{{ e.day_name or '' }}</td>
+            <td>{{ e.work_category or '—' }}</td>
+            <td style="color:var(--text-mid)">{{ e.operational_area or '—' }}</td>
+            <td style="color:var(--teal);font-weight:600">{{ e.start_time or '—' }}</td>
+            <td style="color:var(--teal);font-weight:600">{{ e.end_time or '—' }}</td>
+            <td style="font-weight:700;color:var(--gold)">{{ '%.1f'|format(e.total_hrs|float) }}</td>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.task_desc or '—' }}</td>
+            <td>
+              {% if e.status=='Completed' %}<span class="badge badge-success">✓ {{ e.status }}</span>
+              {% elif e.status=='On Leave' %}<span class="badge badge-info">🏖</span>
+              {% else %}<span class="badge badge-gray">{{ e.status }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-light)">No entries found.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

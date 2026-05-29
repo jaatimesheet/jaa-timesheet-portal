@@ -1,0 +1,813 @@
+{% extends "base.html" %}
+{% block title %}My Timesheet — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">My Timesheet</span>
+  <span class="topbar-sub">{{ today.strftime('%A, %d %B %Y') }}</span>
+</div>
+
+<div class="page-content">
+  {% if on_leave %}
+  <div class="alert alert-info">🏖 You are on approved leave today. Timesheet is locked. <em>{{ leave_reason }}</em></div>
+  {% endif %}
+  {% if locked %}
+  <div class="lock-banner">🔒 Timesheet locked from the {{ lock_day }}th — contact Admin to make changes.</div>
+  {% endif %}
+
+  <!-- Task summary widget -->
+  {% if task_summary and (task_summary.pending > 0 or task_summary.overdue > 0 or notif_unread > 0) %}
+  <div style="margin-bottom:14px">
+    <a href="{{ '/notifications' if notif_unread > 0 else '/my-tasks' }}"
+       style="text-decoration:none;display:flex;align-items:center;gap:12px;
+       background:#fff;border:1.5px solid var(--border);border-radius:var(--r-sm);
+       padding:11px 16px;transition:border-color .15s;
+       {% if task_summary.overdue > 0 or notif_unread > 0 %}border-left:4px solid #DC2626;{% else %}border-left:4px solid var(--gold);{% endif %}"
+       onmouseover="this.style.borderColor='var(--teal)'"
+       onmouseout="this.style.borderColor='{% if task_summary.overdue > 0 or notif_unread > 0 %}#DC2626{% else %}var(--gold){% endif %}'">
+      <span style="font-size:18px">📋</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--text-mid);letter-spacing:.3px;text-transform:uppercase">My Tasks</div>
+        <div style="display:flex;gap:14px;margin-top:3px;flex-wrap:wrap">
+          {% if task_summary.pending > 0 %}
+          <span style="font-size:13px;font-weight:600;color:var(--navy)">
+            {{ task_summary.pending }} pending
+          </span>
+          {% endif %}
+          {% if task_summary.overdue > 0 %}
+          <span style="font-size:13px;font-weight:700;color:#DC2626">
+            ⚠ {{ task_summary.overdue }} overdue
+          </span>
+          {% endif %}
+          {% if notif_unread > 0 %}
+          <span style="font-size:13px;font-weight:700;color:#DC2626">
+            🔔 {{ notif_unread }} unread
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <span style="font-size:13px;color:var(--teal);font-weight:700">View →</span>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Employee info strip -->
+  <div class="card mb-6" style="border-left:4px solid var(--teal)">
+    <div class="card-body" style="padding:16px 20px">
+      <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+        {% for lbl, val in [('Employee', emp.full_name), ('EMP ID', emp.emp_id), ('Role', emp.role)] %}
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">{{ lbl }}</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-top:3px">{{ val }}</div>
+        </div>
+        {% endfor %}
+        <div style="border-left:3px solid var(--teal);padding-left:12px;min-width:180px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Reporting To *</div>
+          <select id="reporting-to" class="form-control" style="margin-top:4px;padding:6px 10px;font-weight:600;color:var(--text)">
+            {% for opt in reporting_opts %}
+            <option value="{{ opt }}" {{ 'selected' if emp.get('reporting_to')==opt }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Attendance</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">
+            {% if checkin_info.checked_in %}
+            <div style="display:flex;align-items:center;gap:6px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:8px;padding:5px 12px">
+              <span>✅</span>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.5px">Checked In</div>
+                <div style="font-size:13px;font-weight:700;color:#047857">{{ checkin_info.login_time }}</div>
+              </div>
+            </div>
+            {% else %}
+            <button type="button" id="btn-checkin" onclick="doCheckIn(this)"
+              {% set now_hour = now.strftime('%H') | int %}
+              {% if now_hour < 8 %}disabled title="Check In available from 8:00 AM"
+              style="display:flex;align-items:center;gap:7px;background:#e5e7eb;color:#9ca3af;border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed"
+              {% else %}
+              style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer"
+              {% endif %}>
+              🟢 Check In
+            </button>
+            {% endif %}
+            <span style="color:var(--border);font-size:18px">|</span>
+            {% if checkin_info.checked_out %}
+            <div style="display:flex;align-items:center;gap:6px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:5px 12px">
+              <span>🔵</span>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px">Checked Out</div>
+                <div style="font-size:13px;font-weight:700;color:#1d4ed8">{{ checkin_info.logout_time }} · {{ checkin_info.duration }}</div>
+              </div>
+            </div>
+            {% else %}
+            <button type="button" id="btn-checkout" onclick="doCheckOut(this)"
+              {% if not checkin_info.checked_in %}disabled{% endif %}
+              style="display:flex;align-items:center;gap:7px;background:{% if checkin_info.checked_in %}linear-gradient(135deg,#0d2647,#1e3a5f){% else %}#e5e7eb{% endif %};color:{% if checkin_info.checked_in %}#fff{% else %}#9ca3af{% endif %};border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:{% if checkin_info.checked_in %}pointer{% else %}not-allowed{% endif %}">
+              🔴 Check Out &amp; Submit
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Work Hours</div>
+          <div id="work-hrs-display" style="font-size:15px;font-weight:700;color:var(--gold);margin-top:3px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task entry table -->
+  <div class="card mb-6">
+    <div class="card-header">
+      <span class="card-title">📝 Task Entries</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:var(--text-light)">Break:</span>
+        <input type="number" id="break-mins" value="0" min="0" max="120"
+               style="width:64px;padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"
+               onchange="calcTotals()">
+        <span style="font-size:13px;color:var(--text-light)">mins</span>
+        <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+        <span style="font-size:13px;color:var(--text-light)">Raw:</span>
+        <strong id="raw-hrs" style="color:var(--text)">0.0h</strong>
+        <span style="font-size:13px;color:var(--text-light)">Net:</span>
+        <strong id="net-hrs" style="color:var(--teal)">0.0h</strong>
+        <div id="live-badge"></div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="entry-table" style="table-layout:auto;width:100%">
+        <thead><tr>
+          <th style="width:32px">#</th>
+          <th style="min-width:220px">Company Name</th>
+          <th style="width:100px">Code</th>
+          <th style="min-width:170px">Work Category</th>
+          <th style="min-width:160px">Op. Area</th>
+          <th style="min-width:150px">Sub-Category</th>
+          <th style="width:130px">Start</th>
+          <th style="width:130px">End</th>
+          <th style="width:65px">Hrs</th>
+          <th style="min-width:200px">Task Description</th>
+          <th style="min-width:120px">Location</th>
+          <th style="min-width:120px">Status</th>
+          <th style="width:36px"></th>
+        </tr></thead>
+        <tbody id="entry-tbody">
+        {% for i in range(10) %}
+        <tr class="entry-row" data-row="{{ i }}">
+          <td style="color:var(--text-light);font-size:12px;text-align:center;width:32px">{{ i+1 }}</td>
+          <td style="min-width:220px">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <input type="text" class="form-control ec-company" list="co-list"
+                     placeholder="Type company name…" style="width:100%;min-width:215px"
+                     oninput="updateCompanyCode(this)" onchange="updateCompanyCode(this)" onblur="updateCompanyCode(this)">
+            </div>
+          </td>
+          <td style="width:100px">
+            <input type="text" class="form-control ec-code-display" readonly placeholder="Auto"
+                   style="width:95px;font-size:12px;font-weight:700;color:var(--teal);background:var(--surface);text-align:center;cursor:default">
+          </td>
+          <td style="min-width:210px"><select class="form-control ec-cat" onchange="loadAreas(this);calcTotals()" style="width:100%;min-width:205px">
+            <option value="">—</option>
+            {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+          </select></td>
+          <td style="min-width:200px"><select class="form-control ec-area" onchange="loadSubs(this);calcTotals()" style="width:100%;min-width:195px"><option value="">—</option></select></td>
+          <td style="min-width:190px"><select class="form-control ec-sub" onchange="calcTotals()" style="width:100%;min-width:185px"><option value="">—</option></select></td>
+          <td style="width:130px"><input type="time" class="form-control ec-start" onchange="calcRowHrs(this);calcTotals()" style="width:125px;font-weight:600;color:var(--teal);font-size:14px;padding:7px 6px"></td>
+          <td style="width:130px"><input type="time" class="form-control ec-end" onchange="calcRowHrs(this);calcTotals()" style="width:125px;font-weight:600;color:var(--teal);font-size:14px;padding:7px 6px"></td>
+          <td style="width:65px"><input type="text" class="form-control ec-hrs" readonly style="width:60px;text-align:center;background:var(--surface);font-weight:700;color:var(--gold);font-size:13px"></td>
+          <td style="min-width:200px"><input type="text" class="form-control ec-task" placeholder="What did you work on?" style="width:100%;min-width:195px"></td>
+          <td style="min-width:120px"><select class="form-control ec-loc" style="width:100%;min-width:115px">
+            <option value="">—</option>
+            {% for loc in work_locations %}<option>{{ loc }}</option>{% endfor %}
+          </select></td>
+          <td style="min-width:120px"><select class="form-control ec-stat" style="width:100%;min-width:115px">
+            {% for s in statuses %}<option {{ 'selected' if s=='Completed' }}>{{ s }}</option>{% endfor %}
+          </select></td>
+          <td><button onclick="clearRow(this)" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:18px;padding:4px" title="Clear">×</button></td>
+        </tr>
+        {% endfor %}
+                </tbody>
+      </table>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div id="totals-badge" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;color:var(--text-light)">Net billable today:</span>
+        <span id="net-badge">—</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear All</button>
+        <button class="btn btn-gold" id="save-btn" onclick="saveEntries()" {% if locked or on_leave %}disabled style="opacity:.5;cursor:not-allowed"{% endif %}>
+          ✔ Save Today's Timesheet
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today's saved entries -->
+  {% if entries %}
+  <div class="card mb-6">
+    <div class="card-header">
+      <span class="card-title">📋 Today's Saved Entries</span>
+      {% set total_hrs = namespace(v=0) %}
+      {% for e in entries %}{% set total_hrs.v = total_hrs.v + e.total_hrs|float %}{% endfor %}
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;color:var(--text-light)">Total: <strong>{{ '%.1f'|format(total_hrs.v) }} hrs</strong></span>
+        {% set pct = [total_hrs.v / daily_target, 1.0]|min %}
+        {% if total_hrs.v >= daily_target %}<span class="hrs-badge complete">🟢 Complete</span>
+        {% elif pct >= 0.5 %}<span class="hrs-badge partial">🟡 {{ '%.1f'|format(total_hrs.v) }}/{{ daily_target }}h</span>
+        {% else %}<span class="hrs-badge low">🔴 {{ '%.1f'|format(total_hrs.v) }}/{{ daily_target }}h</span>{% endif %}
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Co. Code</th><th>Client</th><th>Category</th><th>Op. Area</th>
+          <th>Start</th><th>End</th><th>Hrs</th><th>Task</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for e in entries %}
+          <tr>
+            <td><span class="badge badge-navy">{{ e.company_code or '—' }}</span></td>
+            <td>{{ e.client_name or '—' }}</td>
+            <td>{{ e.work_category or '—' }}</td>
+            <td style="color:var(--text-mid)">{{ e.operational_area or '—' }}</td>
+            <td style="font-weight:600;color:var(--teal)">{{ e.start_time or '—' }}</td>
+            <td style="font-weight:600;color:var(--teal)">{{ e.end_time or '—' }}</td>
+            <td style="font-weight:700;color:var(--gold)">{{ '%.1f'|format(e.total_hrs|float) }}</td>
+            <td style="max-width:220px;word-wrap:break-word;white-space:normal">{{ e.task_desc or '—' }}</td>
+            <td>
+              {% if e.status == 'Completed' %}<span class="badge badge-success">✓ {{ e.status }}</span>
+              {% elif e.status == 'On Leave' %}<span class="badge badge-info">🏖 {{ e.status }}</span>
+              {% else %}<span class="badge badge-gray">{{ e.status }}</span>{% endif %}
+            </td>
+            <td>{% if not locked %}<button class="btn btn-ghost btn-sm" onclick="editEntry({{ e.id }})">✏ Edit</button>{% else %}<span style="color:var(--text-light)">🔒</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recent entries -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📅 Recent Entries <span style="font-size:12px;color:var(--text-light);font-weight:400">(editable up to {{ grace_days }} days)</span></span>
+    </div>
+    <div class="card-body" style="padding:0">
+      {% for day in recent %}
+      <div style="border-bottom:1px solid var(--border)">
+        <div style="padding:12px 20px;background:#F8FAFD;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-weight:700;font-size:14px">{{ day.display }}</div>
+            <span style="font-size:12px;color:var(--text-light)">{{ day.day_name }}</span>
+            {% if day.total_hrs > 0 %}
+              {% if day.total_hrs >= daily_target %}<span class="badge badge-success">🟢 {{ '%.1f'|format(day.total_hrs) }}h</span>
+              {% else %}<span class="badge badge-warning">🟡 {{ '%.1f'|format(day.total_hrs) }}h</span>{% endif %}
+            {% endif %}
+            {% if day.locked %}<span class="badge badge-gray">🔒 Locked</span>{% endif %}
+          </div>
+          {% if not day.locked %}
+          <div style="display:flex;gap:8px">
+            {% if not day.entries %}
+            <button class="btn btn-ghost btn-sm" onclick="openAddModal('{{ day.date }}','{{ day.display }} ({{ day.day_name }})')">➕ Add Entry</button>
+            <button class="btn btn-ghost btn-sm" onclick="markLeave('{{ day.date }}')">🏖 Mark Leave</button>
+            {% else %}
+            <button class="btn btn-ghost btn-sm" onclick="openAddModal('{{ day.date }}','{{ day.display }}')">➕ Add</button>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% if day.entries %}
+        <table style="font-size:13px">
+          <tbody>
+            {% for e in day.entries %}
+            <tr>
+              <td style="width:90px;color:var(--teal);font-weight:600">{{ e.start_time or '—' }} → {{ e.end_time or '—' }}</td>
+              <td style="width:60px;font-weight:700;color:var(--gold)">{{ '%.1f'|format(e.total_hrs|float) }}h</td>
+              <td style="width:130px">{{ e.work_category or '—' }}</td>
+              <td style="width:140px;font-size:12px">
+                {% if e.client_name and e.client_name != 'NA' %}
+                  <span style="display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-weight:600;color:var(--navy)">{{ e.client_name }}</span>
+                  {% if e.company_code %}<span style="font-size:11px;color:var(--text-light);display:block;margin-top:2px">{{ e.company_code }}</span>{% endif %}
+                {% elif e.company_code %}
+                  <span style="display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-weight:600;color:var(--navy)">{{ e.company_code }}</span>
+                {% else %}
+                  <span style="color:var(--text-light)">—</span>
+                {% endif %}
+              </td>
+              <td style="color:var(--text-mid);word-wrap:break-word">{{ e.task_desc or '—' }}</td>
+              <td style="width:110px;font-size:12px;color:var(--text-light)">
+                {% if e.reporting_to %}👤 {{ e.reporting_to }}{% endif %}
+              </td>
+              <td style="width:100px">
+                {% if e.status == 'On Leave' %}<span class="badge badge-info">🏖</span>
+                {% elif e.status == 'Completed' %}<span class="badge badge-success">✓</span>
+                {% else %}<span class="badge badge-gray">{{ e.status }}</span>{% endif %}
+              </td>
+              <td style="width:80px">
+                {% if not day.locked %}<button class="btn btn-ghost btn-sm" onclick="editEntry({{ e.id }})">✏</button>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:12px 20px;font-size:13px;color:var(--text-light)">No entries recorded.</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit Entry Modal -->
+<div class="modal-overlay" id="edit-entry-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏ Edit Entry</span>
+      <button class="modal-close" onclick="closeModal('edit-entry-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-entry-id">
+      <input type="hidden" id="edit-entry-date">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Work Category *</label>
+          <select class="form-control" id="edit-cat" onchange="editLoadAreas()">
+            <option value="">— Select —</option>
+            {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operational Area</label>
+          <select class="form-control" id="edit-area" onchange="editLoadSubs()">
+            <option value="">—</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-Category</label>
+        <select class="form-control" id="edit-sub"><option value="">—</option></select>
+      </div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label class="form-label">Start Time</label>
+          <input type="text" class="form-control" id="edit-start" placeholder="09:00" maxlength="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Time</label>
+          <input type="text" class="form-control" id="edit-end" placeholder="17:30" maxlength="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Break (mins)</label>
+          <input type="number" class="form-control" id="edit-break" value="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Task Description</label>
+        <input type="text" class="form-control" id="edit-task" placeholder="What did you work on?">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Work Location</label>
+          <select class="form-control" id="edit-loc">
+            {% for loc in work_locations %}<option>{{ loc }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="edit-stat">
+            {% for s in statuses %}<option {{ 'selected' if s=='Completed' }}>{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" class="form-control" id="edit-notes" placeholder="Optional notes">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-entry-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEditEntry()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Past Entry Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="add-modal-title">Add Entry</span>
+      <button class="modal-close" onclick="closeModal('add-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="add-date">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Company{% if is_restricted %} <span style="font-size:10px;background:rgba(201,168,76,.18);color:var(--navy);padding:1px 6px;border-radius:8px;font-weight:600;letter-spacing:.3px">Your Assigned</span>{% endif %}</label>
+          <select class="form-control" id="add-company" onchange="toggleAddCustomCo(this)">
+            <option value="">— Select Company —</option>
+            {% for co in companies %}<option value="{{ co.unique_code }}" data-name="{{ co.full_name }}">{{ co.full_name }}</option>{% endfor %}
+            {% if not is_restricted %}<option value="__other__">✏ Type manually...</option>{% endif %}
+          </select>
+          <input type="text" class="form-control" id="add-company-custom" placeholder="Type company name"
+                 style="display:none;margin-top:6px;font-size:13px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Category *</label>
+          <select class="form-control" id="add-cat" onchange="loadModalAreas()">
+            <option value="">— Select —</option>
+            {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Operational Area</label>
+          <select class="form-control" id="add-area" onchange="loadModalSubs()">
+            <option value="">— Select category first —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sub-Category</label>
+          <select class="form-control" id="add-sub"><option value="">—</option></select>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label class="form-label">Start Time (HH:MM)</label>
+          <input type="text" class="form-control" id="add-start" placeholder="09:00" maxlength="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Time (HH:MM)</label>
+          <input type="text" class="form-control" id="add-end" placeholder="17:30" maxlength="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Break (mins)</label>
+          <input type="number" class="form-control" id="add-break" value="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Task Description</label>
+        <input type="text" class="form-control" id="add-task" placeholder="What did you work on?">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Work Location</label>
+          <select class="form-control" id="add-loc">
+            {% for loc in work_locations %}<option>{{ loc }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="add-stat">
+            {% for s in statuses %}<option {{ 'selected' if s=='Completed' }}>{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddEntry()">💾 Save Entry</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+#entry-table{table-layout:auto;width:100%}
+#entry-table{table-layout:auto!important}
+#entry-table th,#entry-table td{white-space:normal!important;word-wrap:break-word!important;vertical-align:middle!important;overflow:visible!important}
+#entry-table select,#entry-table input{box-sizing:border-box}
+input[type=time].form-control{min-width:125px!important;width:125px!important;padding:7px 6px!important;font-size:14px!important}
+</style>
+<datalist id="co-list">
+  {% for co in companies %}<option value="{{ co.full_name }}">{% endfor %}
+</datalist>
+<script>
+var DAILY_TARGET = {{ daily_target }};
+var JAA_CO_MAP   = {};
+{% for co in companies %}JAA_CO_MAP[{{ co.full_name|tojson }}] = {{ co.unique_code|tojson }};
+{% endfor %}
+
+function updateCompanyCode(input) {
+  var row = input.closest('tr');
+  if (!row) return;
+  var codeInput = row.querySelector('.ec-code-display');
+  if (!codeInput) return;
+  var name = input.value.trim();
+  var code = JAA_CO_MAP[name] || '';
+  codeInput.value = code || (name ? 'MANUAL' : '');
+}
+
+function calcRowHrs(input) {
+  const row = input.closest('tr');
+  const s = row.querySelector('.ec-start').value;
+  const e = row.querySelector('.ec-end').value;
+  const hrsInput = row.querySelector('.ec-hrs');
+  if (!s || !e) { hrsInput.value = ''; return; }
+  try {
+    const [sh,sm] = s.split(':').map(Number);
+    const [eh,em] = e.split(':').map(Number);
+    const diff = (eh*60+em) - (sh*60+sm);
+    if (diff <= 0) { hrsInput.value = ''; return; }
+    hrsInput.value = (diff/60).toFixed(2);
+  } catch(err) { hrsInput.value = ''; }
+}
+
+function calcTotals() {
+  let raw = 0;
+  document.querySelectorAll('.ec-hrs').forEach(inp => {
+    raw += parseFloat(inp.value) || 0;
+  });
+  const brk = parseInt(document.getElementById('break-mins').value) || 0;
+  const net = Math.max(0, raw - brk/60);
+  document.getElementById('raw-hrs').textContent = raw.toFixed(1)+'h';
+  const netEl = document.getElementById('net-hrs');
+  netEl.textContent = net.toFixed(1)+'h';
+  netEl.style.color = net >= DAILY_TARGET ? '#10B981' : '#F59E0B';
+  document.getElementById('net-badge').innerHTML = hrsBadge(net, DAILY_TARGET);
+  const pb = document.getElementById('live-badge');
+  pb.innerHTML = progressBar(net, DAILY_TARGET);
+  pb.style.width = '120px';
+}
+
+function calcHrs() { /* replaced by Check In/Out buttons */ }
+
+async function loadAreas(sel) {
+  const row = sel.closest('tr');
+  const cat = sel.value;
+  const areaSel = row.querySelector('.ec-area');
+  const subSel  = row.querySelector('.ec-sub');
+  areaSel.innerHTML = '<option value="">—</option>';
+  subSel.innerHTML  = '<option value="">—</option>';
+  if (!cat) return;
+  const areas = await fetch('/api/areas?cat='+encodeURIComponent(cat)).then(r=>r.json());
+  areas.forEach(a => areaSel.innerHTML += `<option>${a}</option>`);
+}
+
+async function loadSubs(sel) {
+  const row = sel.closest('tr');
+  const cat  = row.querySelector('.ec-cat').value;
+  const area = sel.value;
+  const subSel = row.querySelector('.ec-sub');
+  subSel.innerHTML = '<option value="">—</option>';
+  if (!cat || !area) return;
+  const subs = await fetch(`/api/subs?cat=${encodeURIComponent(cat)}&area=${encodeURIComponent(area)}`).then(r=>r.json());
+  subs.forEach(s => subSel.innerHTML += `<option>${s}</option>`);
+}
+
+async function loadModalAreas() {
+  const cat = document.getElementById('add-cat').value;
+  const a = document.getElementById('add-area');
+  const s = document.getElementById('add-sub');
+  a.innerHTML = '<option value="">—</option>';
+  s.innerHTML = '<option value="">—</option>';
+  if (!cat) return;
+  const areas = await fetch('/api/areas?cat='+encodeURIComponent(cat)).then(r=>r.json());
+  areas.forEach(x => a.innerHTML += `<option>${x}</option>`);
+}
+
+async function loadModalSubs() {
+  const cat  = document.getElementById('add-cat').value;
+  const area = document.getElementById('add-area').value;
+  const s = document.getElementById('add-sub');
+  s.innerHTML = '<option value="">—</option>';
+  if (!cat || !area) return;
+  const subs = await fetch(`/api/subs?cat=${encodeURIComponent(cat)}&area=${encodeURIComponent(area)}`).then(r=>r.json());
+  subs.forEach(x => s.innerHTML += `<option>${x}</option>`);
+}
+
+function clearRow(btn) {
+  const row = btn.closest('tr');
+  row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  row.querySelectorAll('input[type=text], input[type=time]').forEach(i => i.value = '');
+  calcTotals();
+}
+
+function clearAll() {
+  document.querySelectorAll('.entry-row').forEach(row => {
+    row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    row.querySelectorAll('input[type=text], input[type=time]').forEach(i => i.value = '');
+  });
+  calcTotals();
+}
+
+function collectEntries() {
+  const entries = [];
+  document.querySelectorAll('.entry-row').forEach(row => {
+    const cat = row.querySelector('.ec-cat').value;
+    if (!cat) return;
+    const coInput = row.querySelector('.ec-company');
+    const coName  = coInput ? coInput.value.trim() : '';
+    const coCode  = row.querySelector('.ec-code-display') ? row.querySelector('.ec-code-display').value : '';
+    entries.push({
+      company_code:     (coCode && coCode !== 'MANUAL') ? coCode : '',
+      client_name:      coName,
+      work_category:    cat,
+      operational_area: row.querySelector('.ec-area').value,
+      sub_category:     row.querySelector('.ec-sub').value,
+      start_time:       row.querySelector('.ec-start').value,
+      end_time:         row.querySelector('.ec-end').value,
+      break_mins:       parseInt(document.getElementById('break-mins').value) || 0,
+      task_desc:        row.querySelector('.ec-task').value,
+      work_location:    row.querySelector('.ec-loc').value,
+      status:           row.querySelector('.ec-stat').value,
+    });
+  });
+  return entries;
+}
+
+async function saveEntries() {
+  const btn = document.getElementById('save-btn');
+  const entries = collectEntries();
+  if (!entries.length) { toast('Add at least one entry.','warning'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+  try {
+    const r = await api('/api/save-entries', {
+      entries,
+      reporting_to: document.getElementById('reporting-to').value,
+
+    });
+    if (r.ok) { toast('Timesheet saved!','success'); setTimeout(()=>location.reload(),800); }
+    else       { toast(r.error||'Save failed.','error'); }
+  } catch(e) {
+    toast('Unexpected error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✔ Save Today\'s Timesheet';
+  }
+}
+
+function openAddModal(dateStr, label) {
+  document.getElementById('add-date').value = dateStr;
+  document.getElementById('add-modal-title').textContent = 'Add Entry — ' + label;
+  document.getElementById('add-company').value = '';
+  document.getElementById('add-company-custom').style.display = 'none';
+  document.getElementById('add-company-custom').value = '';
+  document.getElementById('add-cat').value = '';
+  document.getElementById('add-area').innerHTML = '<option value="">—</option>';
+  document.getElementById('add-sub').innerHTML  = '<option value="">—</option>';
+  document.getElementById('add-start').value = '';
+  document.getElementById('add-end').value   = '';
+  document.getElementById('add-task').value  = '';
+  openModal('add-modal');
+}
+
+async function submitAddEntry() {
+  const coSel = document.getElementById('add-company');
+  const coCode = (coSel && coSel.value !== '__other__') ? coSel.value : '';
+  const coName = coSel && coSel.value === '__other__'
+    ? (document.getElementById('add-company-custom')?.value?.trim() || '')
+    : (coSel && coSel.selectedIndex > 0 ? (coSel.options[coSel.selectedIndex].dataset.name || '') : '');
+  const d = {
+    entry_date:       document.getElementById('add-date').value,
+    company_code:     coCode,
+    client_name:      coName,
+    work_category:    document.getElementById('add-cat').value,
+    operational_area: document.getElementById('add-area').value,
+    sub_category:     document.getElementById('add-sub').value,
+    start_time:       document.getElementById('add-start').value,
+    end_time:         document.getElementById('add-end').value,
+    break_mins:       parseInt(document.getElementById('add-break').value)||0,
+    task_desc:        document.getElementById('add-task').value,
+    work_location:    document.getElementById('add-loc').value,
+    status:           document.getElementById('add-stat').value,
+  };
+  if (!d.work_category) { toast('Work category required.','warning'); return; }
+  const r = await api('/api/past-entry', d);
+  if (r.ok) { toast('Entry saved!','success'); closeModal('add-modal'); setTimeout(()=>location.reload(),800); }
+  else       { toast(r.error||'Failed.','error'); }
+}
+
+function toggleAddCustomCo(sel) {
+  const customInput = document.getElementById('add-company-custom');
+  if (sel.value === '__other__') {
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
+}
+
+async function markLeave(dateStr) {
+  if (!confirm(`Mark ${dateStr} as Unplanned Leave?`)) return;
+  const r = await api('/api/mark-leave', {entry_date: dateStr});
+  if (r.ok) { toast('Marked as leave.','success'); setTimeout(()=>location.reload(),800); }
+  else       { toast(r.error||'Failed.','error'); }
+}
+
+async function editEntry(id) {
+  const e = await fetch('/api/entry/'+id).then(r=>r.json());
+  if (!e || !e.id) { toast('Could not load entry.','error'); return; }
+  document.getElementById('edit-entry-id').value     = e.id;
+  document.getElementById('edit-entry-date').value   = e.entry_date || e.date || '';
+  document.getElementById('edit-cat').value          = e.work_category || '';
+  document.getElementById('edit-start').value        = e.start_time || '';
+  document.getElementById('edit-end').value          = e.end_time   || '';
+  document.getElementById('edit-break').value        = e.break_mins || 0;
+  document.getElementById('edit-task').value         = e.task_desc  || '';
+  document.getElementById('edit-notes').value        = e.notes      || '';
+  // Load areas for category
+  const areaSel = document.getElementById('edit-area');
+  const subSel  = document.getElementById('edit-sub');
+  areaSel.innerHTML = '<option value="">—</option>';
+  subSel.innerHTML  = '<option value="">—</option>';
+  if (e.work_category) {
+    const areas = await fetch('/api/areas/'+encodeURIComponent(e.work_category)).then(r=>r.json());
+    areas.forEach(a => areaSel.innerHTML += `<option ${a===e.operational_area?'selected':''}>${a}</option>`);
+    if (e.operational_area) {
+      const subs = await fetch(`/api/subs/${encodeURIComponent(e.work_category)}/${encodeURIComponent(e.operational_area)}`).then(r=>r.json());
+      subs.forEach(s => subSel.innerHTML += `<option ${s===e.sub_category?'selected':''}>${s}</option>`);
+    }
+  }
+  // Set loc and status
+  const locSel  = document.getElementById('edit-loc');
+  const statSel = document.getElementById('edit-stat');
+  if (locSel)  [...locSel.options].forEach(o => o.selected = o.value===e.work_location);
+  if (statSel) [...statSel.options].forEach(o => o.selected = o.value===e.status);
+  openModal('edit-entry-modal');
+}
+
+async function editLoadAreas() {
+  const cat     = document.getElementById('edit-cat').value;
+  const areaSel = document.getElementById('edit-area');
+  const subSel  = document.getElementById('edit-sub');
+  areaSel.innerHTML = '<option value="">—</option>';
+  subSel.innerHTML  = '<option value="">—</option>';
+  if (!cat) return;
+  const areas = await fetch('/api/areas?cat='+encodeURIComponent(cat)).then(r=>r.json());
+  areas.forEach(a => areaSel.innerHTML += `<option>${a}</option>`);
+}
+
+async function editLoadSubs() {
+  const cat  = document.getElementById('edit-cat').value;
+  const area = document.getElementById('edit-area').value;
+  const subSel = document.getElementById('edit-sub');
+  subSel.innerHTML = '<option value="">—</option>';
+  if (!cat || !area) return;
+  const subs = await fetch(`/api/subs?cat=${encodeURIComponent(cat)}&area=${encodeURIComponent(area)}`).then(r=>r.json());
+  subs.forEach(s => subSel.innerHTML += `<option>${s}</option>`);
+}
+
+async function submitEditEntry() {
+  const d = {
+    id:               parseInt(document.getElementById('edit-entry-id').value),
+    entry_date:       document.getElementById('edit-entry-date').value,
+    work_category:    document.getElementById('edit-cat').value,
+    operational_area: document.getElementById('edit-area').value,
+    sub_category:     document.getElementById('edit-sub').value,
+    start_time:       document.getElementById('edit-start').value,
+    end_time:         document.getElementById('edit-end').value,
+    break_mins:       parseInt(document.getElementById('edit-break').value)||0,
+    task_desc:        document.getElementById('edit-task').value,
+    work_location:    document.getElementById('edit-loc').value,
+    status:           document.getElementById('edit-stat').value,
+    notes:            document.getElementById('edit-notes').value,
+  };
+  if (!d.work_category) { toast('Work category required.','warning'); return; }
+  const r = await api('/api/edit-entry', d);
+  if (r.ok) { toast('Entry updated!','success'); closeModal('edit-entry-modal'); setTimeout(()=>location.reload(),800); }
+  else       { toast(r.error||'Update failed.','error'); }
+}
+
+async function doCheckIn(btn) {
+  btn.disabled = true; btn.textContent = '⏳ Checking in…';
+  const r = await api('/api/checkin', {});
+  if (r.ok) {
+    // Show locked badge — whether first check-in or returning after re-login
+    const label = r.already ? 'Checked In (original)' : 'Checked In';
+    btn.closest('div').innerHTML = '<div style="display:flex;align-items:center;gap:6px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:8px;padding:5px 12px"><span>✅</span><div><div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase">'+label+'</div><div style="font-size:13px;font-weight:700;color:#047857">'+r.login_time_full+'</div></div></div>';
+    const co = document.getElementById('btn-checkout');
+    if (co) { co.disabled=false; co.style.background='linear-gradient(135deg,#0d2647,#1e3a5f)'; co.style.color='#fff'; co.style.cursor='pointer'; }
+    if (!r.already) toast('Checked in at '+r.login_time_full+' ✅','success');
+  } else {
+    toast(r.error||'Check In failed.','error');
+    btn.disabled=false; btn.textContent='🟢 Check In';
+  }
+}
+
+async function doCheckOut(btn) {
+  const entries = collectEntries();
+  if (!entries.length) { toast('Fill at least one task entry before checking out.','warning'); return; }
+  if (!confirm('Check Out and submit timesheet?')) return;
+  btn.disabled=true; btn.textContent='⏳ Submitting…';
+  const r = await api('/api/checkout', {
+    entries,
+    reporting_to: document.getElementById('reporting-to').value,
+  });
+  if (r.ok) {
+    btn.closest('div').innerHTML = '<div style="display:flex;align-items:center;gap:6px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:5px 12px"><span>🔵</span><div><div style="font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase">Checked Out</div><div style="font-size:13px;font-weight:700;color:#1d4ed8">'+r.logout_time_full+' · '+r.duration+'</div></div></div>';
+    toast('✅ Checked out · '+r.entries_saved+' entries saved · '+r.duration,'success');
+    setTimeout(function(){ location.reload(); }, 1800);
+  } else {
+    toast(r.error||'Check Out failed.','error');
+    btn.disabled=false; btn.textContent='🔴 Check Out & Submit';
+  }
+}
+</script>
+{% endblock %}

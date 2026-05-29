@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Billing Advice — JAA{% endblock %}
+
+{% block extra_head %}
+<style>
+.billing-wrap{max-width:680px;margin:0 auto;padding:28px 24px 88px;}
+.page-header{margin-bottom:22px;}
+.page-header h2{font-family:'DM Serif Display',serif;font-size:22px;color:#0d2647;margin-bottom:4px;}
+.page-header p{font-size:13px;color:#6b7280;}
+.save-bar{background:#fff;border:1px solid #dde3eb;border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+#saveIndicator{font-size:12px;font-weight:500;color:#8a99b0;}
+.sb-btn{padding:6px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;background:#0d2647;color:#fff;}
+.sb-btn:hover{background:#162d52;}
+.section-head{display:flex;align-items:center;gap:10px;margin:26px 0 12px;}
+.section-head:first-of-type{margin-top:0;}
+.s-icon{width:28px;height:28px;border-radius:7px;background:#0d2647;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.s-title{font-family:'DM Serif Display',serif;font-size:14px;color:#0d2647;}
+.s-line{flex:1;height:1px;background:#dde3eb;}
+.fg{background:#fff;border:1px solid #dde3eb;border-radius:10px;overflow:hidden;margin-bottom:6px;box-shadow:0 1px 3px rgba(13,38,71,0.05);}
+.f{padding:11px 15px;border-bottom:1px solid #dde3eb;position:relative;}
+.f:last-child{border-bottom:none;}
+.f label{display:block;font-size:10px;font-weight:700;color:#6b7a94;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+.f input,.f select,.f textarea{width:100%;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13.5px;color:#1a2744;padding:0;}
+.f input::placeholder,.f textarea::placeholder{color:#8a99b0;}
+.f select{cursor:pointer;}
+.f textarea{resize:vertical;min-height:52px;line-height:1.55;}
+.f input[type="date"]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
+.r2{display:grid;grid-template-columns:1fr 1fr;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;}
+.r2 .f:not(:last-child),.r3 .f:not(:last-child),.r4 .f:not(:last-child){border-right:1px solid #dde3eb;}
+.tg{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;}
+.tg label{padding:5px 13px;border:1.5px solid #c8d2de;border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:500;color:#5a6a80;transition:all 0.15s;text-transform:none;letter-spacing:0;margin-bottom:0;}
+.tg input[type="radio"]{display:none;}
+.tg label:has(input:checked){background:#0d2647;border-color:#0d2647;color:#fff;font-weight:600;}
+.tg.tc label:has(input:checked){background:#0ea5a0;border-color:#0ea5a0;color:#fff;}
+.ac-wrap{position:relative;}
+.ac-row{display:flex;align-items:center;gap:8px;}
+.ac-row input{flex:1;}
+.ac-badge{font-size:10.5px;font-weight:600;color:#10b981;background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:2px 8px;white-space:nowrap;display:none;}
+.ac-dd{position:absolute;top:calc(100% + 2px);left:-15px;right:-15px;background:#fff;border:1px solid #c8d2de;border-radius:8px;box-shadow:0 8px 24px rgba(13,38,71,0.12);z-index:100;overflow:hidden;display:none;}
+.ac-dd.open{display:block;}
+.ac-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid #dde3eb;transition:background 0.1s;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover{background:#f0f4f8;}
+.ac-name{font-size:13px;font-weight:600;color:#1a2744;}
+.ac-gstin{font-size:11px;color:#5a6a80;font-family:monospace;margin-top:1px;}
+.ac-new{padding:9px 13px;cursor:pointer;font-size:12.5px;color:#0ea5a0;font-weight:600;background:rgba(45,212,191,0.07);}
+.ac-new:hover{background:rgba(45,212,191,0.14);}
+.gstin-row{display:flex;align-items:center;gap:8px;}
+.gstin-row input{flex:1;}
+.gsave-btn{padding:4px 11px;border-radius:6px;background:#0d2647;color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;display:none;}
+.submit-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #dde3eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:50;box-shadow:0 -2px 12px rgba(13,38,71,0.08);}
+.submit-note{font-size:12.5px;color:#6b7280;}
+.btn-submit{padding:11px 28px;border-radius:8px;background:#0d2647;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;}
+.btn-submit:hover{background:#162d52;}
+.btn-submit:disabled{opacity:0.6;cursor:not-allowed;}
+.btn-clr{padding:11px 18px;border-radius:8px;background:#fff;color:#5a6a80;border:1.5px solid #c8d2de;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;}
+.btn-clr:hover{border-color:#0d2647;color:#0d2647;}
+#ba-toast{position:fixed;bottom:80px;right:22px;padding:9px 17px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity 0.3s,transform 0.3s;pointer-events:none;color:#fff;}
+.success-overlay{display:none;position:fixed;inset:0;background:rgba(11,31,58,0.6);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.success-overlay.show{display:flex;}
+.success-box{background:#fff;border-radius:14px;max-width:420px;width:calc(100% - 40px);padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(11,31,58,0.25);}
+.success-icon{font-size:48px;margin-bottom:12px;}
+.success-title{font-family:'DM Serif Display',serif;font-size:20px;color:#0d2647;margin-bottom:6px;}
+.success-sub{font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:20px;}
+.success-btn{padding:11px 28px;border-radius:8px;background:#0d2647;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+@media(max-width:600px){
+  .billing-wrap{padding:16px 12px 88px;}
+  .r2,.r3,.r4{grid-template-columns:1fr;}
+  .r2 .f:not(:last-child),.r3 .f:not(:last-child),.r4 .f:not(:last-child){border-right:none;}
+  .submit-bar{flex-direction:column;align-items:stretch;gap:8px;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Billing Advice Submitted!</div>
+    <div class="success-sub">Your billing advice has been saved successfully. The Admin/Partner will review it and generate the invoice.</div>
+    <button class="success-btn" onclick="location.reload()">Submit Another</button>
+  </div>
+</div>
+
+<div id="ba-toast"></div>
+
+<div class="billing-wrap">
+  <div class="page-header">
+    <h2>💼 Billing Advice</h2>
+    <p>Fill in all details below and click <strong>Submit</strong>. Admin/Partner will add fees and generate the invoice.</p>
+  </div>
+
+  <div class="save-bar">
+    <span id="saveIndicator">Start filling — progress auto-saves as you type</span>
+    <button class="sb-btn" onclick="manualSave()">💾 Save Progress</button>
+  </div>
+
+  <!-- FIRM & CLIENT -->
+  <div class="section-head"><div class="s-icon">🏛</div><div class="s-title">Firm &amp; Client Details</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="f">
+      <label>1. Billing Firm</label>
+      <select id="firmName">
+        <option value="">— Select Firm —</option>
+        <option value="JAA">JAA</option>
+        <option value="DVJ">DVJ</option>
+        <option value="LISPL">LISPL</option>
+        <option value="Other">Other (specify below)</option>
+      </select>
+    </div>
+    <div class="f" id="firmOtherWrap" style="display:none">
+      <label>Custom Firm Name</label>
+      <input type="text" id="firmOther" placeholder="Enter firm name">
+    </div>
+    <div class="f">
+      <label>2. Client / Company Name</label>
+      <div class="ac-wrap">
+        <div class="ac-row">
+          <input type="text" id="clientName" placeholder="Type to search companies…" oninput="onClientType()" onkeydown="onClientKey(event)" autocomplete="off">
+          <span class="ac-badge" id="acBadge">✓ Found</span>
+        </div>
+        <div class="ac-dd" id="acDD"></div>
+      </div>
+    </div>
+    <div class="f"><label>Client Address</label><textarea id="clientAddr" placeholder="Full registered address"></textarea></div>
+    <div class="r2">
+      <div class="f">
+        <label>Client GSTIN</label>
+        <div class="gstin-row">
+          <input type="text" id="clientGSTIN" placeholder="Auto-fills for saved clients" maxlength="15" oninput="onGSTINType()">
+          <button class="gsave-btn" id="gstinSaveBtn" onclick="saveGSTIN()">+ Save GSTIN</button>
+        </div>
+      </div>
+      <div class="f">
+        <label>Applicable Tax</label>
+        <div class="tg">
+          <label><input type="radio" name="taxType" value="CGST_SGST"><span>CGST &amp; SGST</span></label>
+          <label><input type="radio" name="taxType" value="IGST"><span>IGST</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT & SERVICE -->
+  <div class="section-head"><div class="s-icon">📅</div><div class="s-title">Audit &amp; Service Details</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>3. Date of Cost Audit Report / Certificate</label><input type="date" id="auditDate"></div>
+      <div class="f"><label>No. of Items / Certificates</label><input type="number" id="numItems" placeholder="e.g. 2" min="1"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>4. UDIN Taken?</label><div class="tg"><label><input type="radio" name="udin" value="Yes"><span>Yes</span></label><label><input type="radio" name="udin" value="No"><span>No</span></label></div></div>
+      <div class="f"><label>First Time Client?</label><div class="tg"><label><input type="radio" name="firstTime" value="Yes"><span>Yes</span></label><label><input type="radio" name="firstTime" value="No"><span>No</span></label></div></div>
+    </div>
+    <div class="f"><label>Financial Year</label><input type="text" id="fy" placeholder="e.g. 2024-25"></div>
+    <div class="f"><label>5. Particulars of Professional Service</label><textarea id="serviceDesc" placeholder="e.g. Cost Audit for FY 2024-25 under Section 148 of Companies Act 2013" style="min-height:60px"></textarea></div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="section-head"><div class="s-icon">👥</div><div class="s-title">Team &amp; XBRL</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>6. XBRL Pages</label><input type="number" id="xbrl" placeholder="0" min="0"></div>
+      <div class="f"><label>&nbsp;</label></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Partner / Associate / CMA 1</label><input type="text" id="partner1" placeholder="Name"></div>
+      <div class="f"><label>Partner / Associate / CMA 2</label><input type="text" id="partner2" placeholder="Name"></div>
+    </div>
+    <div class="r3">
+      <div class="f"><label>7. Trainee 1</label><input type="text" id="trainee1" placeholder="Name"></div>
+      <div class="f"><label>Trainee 2</label><input type="text" id="trainee2" placeholder="Name"></div>
+      <div class="f"><label>Trainee 3</label><input type="text" id="trainee3" placeholder="Name"></div>
+    </div>
+  </div>
+
+  <!-- OOP -->
+  <div class="section-head"><div class="s-icon">💼</div><div class="s-title">OOP — Out of Pocket Expenses</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="r4">
+      <div class="f"><label>8. Month 1</label><input type="text" id="m1" placeholder="April"></div>
+      <div class="f"><label>Month 2</label><input type="text" id="m2" placeholder="June"></div>
+      <div class="f"><label>Month 3</label><input type="text" id="m3" placeholder="August"></div>
+      <div class="f"><label>Month 4</label><input type="text" id="m4" placeholder="October"></div>
+    </div>
+    <div class="r3">
+      <div class="f"><label>9. Trainee 1 OOP (₹)</label><input type="number" id="tOOP1" placeholder="0"></div>
+      <div class="f"><label>Trainee 2 OOP (₹)</label><input type="number" id="tOOP2" placeholder="0"></div>
+      <div class="f"><label>Trainee 3 OOP (₹)</label><input type="number" id="tOOP3" placeholder="0"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>10. Partner / Associate 1 OOP (₹)</label><input type="number" id="pOOP1" placeholder="0"></div>
+      <div class="f"><label>Partner / Associate 2 OOP (₹)</label><input type="number" id="pOOP2" placeholder="0"></div>
+    </div>
+  </div>
+
+  <!-- CRA -->
+  <div class="section-head"><div class="s-icon">📋</div><div class="s-title">CRA Filing Details</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>11. Who Filed CRA2?</label><div class="tg tc"><label><input type="radio" name="cra2" value="JAA" onchange="toggleFiling()"><span>JAA</span></label><label><input type="radio" name="cra2" value="Company" checked onchange="toggleFiling()"><span>Company</span></label></div></div>
+      <div class="f"><label>Who Filed CRA4?</label><div class="tg tc"><label><input type="radio" name="cra4" value="JAA" onchange="toggleFiling()"><span>JAA</span></label><label><input type="radio" name="cra4" value="Company" checked onchange="toggleFiling()"><span>Company</span></label></div></div>
+    </div>
+    <div class="r2" id="srnRow" style="display:none">
+      <div class="f" id="srnCRA2Wrap" style="display:none"><label>12. SRN of CRA2 (by JAA)</label><input type="text" id="srnCRA2" placeholder="SRN Number"></div>
+      <div class="f" id="srnCRA4Wrap" style="display:none"><label>12. SRN of CRA4 (by JAA)</label><input type="text" id="srnCRA4" placeholder="SRN Number"></div>
+    </div>
+    <div class="r2" id="costRow" style="display:none">
+      <div class="f" id="cra2CostWrap" style="display:none"><label>13. Cost of Filing CRA2 by JAA (₹)</label><input type="number" id="cra2Cost" placeholder="0"></div>
+      <div class="f" id="cra4CostWrap" style="display:none"><label>Cost of Filing CRA4 by JAA (₹)</label><input type="number" id="cra4Cost" placeholder="0"></div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="section-head"><div class="s-icon">📬</div><div class="s-title">Contact &amp; Advice Details</div><div class="s-line"></div></div>
+  <div class="fg">
+    <div class="r2">
+      <div class="f"><label>14. Concerned Person — Name</label><input type="text" id="contactName" placeholder="Person to send bill to"></div>
+      <div class="f"><label>Designation</label><input type="text" id="contactDesig" placeholder="CFO / Finance Manager"></div>
+    </div>
+    <div class="r2">
+      <div class="f"><label>Advice From — Partner's Name</label><input type="text" id="advicePartner" placeholder="Partner's name"></div>
+      <div class="f"><label>Date</label><input type="date" id="adviceDate"></div>
+    </div>
+    <div class="f"><label>15. Any Other / Additional Information</label><textarea id="additionalInfo" placeholder="Any special notes…" style="min-height:52px"></textarea></div>
+  </div>
+
+</div>
+
+<!-- FIXED SUBMIT BAR -->
+<div class="submit-bar">
+  <div class="submit-note">Signed in as <strong>{{ emp.full_name }}</strong></div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn-clr" onclick="clearForm()">🗑 Clear</button>
+    <button class="btn-submit" id="submitBtn" onclick="submitDraft()">Submit Billing Advice →</button>
+  </div>
+</div>
+
+<script type="application/json" id="companies-data">{{ companies_json | safe }}</script>
+<script>
+const COMPANIES = JSON.parse(document.getElementById('companies-data').textContent);
+let clients = COMPANIES.map(c => ({n: c.full_name, g: c.gstin || ''}));
+let autoTimer = null;
+const LS_KEY = 'jaa_ba_{{ emp.emp_id }}';
+const DF = ['firmName','firmOther','clientName','clientAddr','clientGSTIN','auditDate','numItems','fy','serviceDesc','xbrl','partner1','partner2','trainee1','trainee2','trainee3','m1','m2','m3','m4','tOOP1','tOOP2','tOOP3','pOOP1','pOOP2','srnCRA2','srnCRA4','cra2Cost','cra4Cost','contactName','contactDesig','advicePartner','adviceDate','additionalInfo'];
+const DR = ['taxType','udin','firstTime','cra2','cra4'];
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('adviceDate').valueAsDate = new Date();
+  // Restore progress
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if(saved){
+      const d = JSON.parse(saved);
+      DF.forEach(id => { const el=document.getElementById(id); if(el&&d[id]!==undefined) el.value=d[id]; });
+      DR.forEach(nm => { const v=d['r_'+nm]; if(v){ const el=document.querySelector(`input[name="${nm}"][value="${v}"]`); if(el) el.checked=true; }});
+      if(document.getElementById('firmName').value==='Other') document.getElementById('firmOtherWrap').style.display='block';
+      toggleFiling();
+      const dt = new Date(d._at);
+      document.getElementById('saveIndicator').textContent = '📂 Progress restored · ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('saveIndicator').style.color = '#0ea5a0';
+    }
+  } catch{}
+  // Attach autosave
+  DF.forEach(id => { const el=document.getElementById(id); if(el){ el.addEventListener('input',scheduleAS); el.addEventListener('change',scheduleAS); }});
+  DR.forEach(nm => document.querySelectorAll(`input[name="${nm}"]`).forEach(el => el.addEventListener('change',scheduleAS)));
+});
+
+function scheduleAS(){ clearTimeout(autoTimer); autoTimer = setTimeout(doAutoSave,1500); }
+function doAutoSave(){
+  const d={};
+  DF.forEach(id => { const el=document.getElementById(id); if(el) d[id]=el.value; });
+  DR.forEach(nm => { const el=document.querySelector(`input[name="${nm}"]:checked`); if(el) d['r_'+nm]=el.value; });
+  d._at = new Date().toISOString();
+  localStorage.setItem(LS_KEY, JSON.stringify(d));
+  const dt=new Date(d._at);
+  document.getElementById('saveIndicator').textContent = '✓ Progress saved · '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('saveIndicator').style.color = '#10b981';
+}
+function manualSave(){ doAutoSave(); showToast('💾 Progress saved!'); }
+
+// Autocomplete
+let acI=-1;
+function onClientType(){
+  const q=document.getElementById('clientName').value.trim(), dd=document.getElementById('acDD');
+  document.getElementById('acBadge').style.display='none'; document.getElementById('gstinSaveBtn').style.display='none'; acI=-1;
+  if(!q){dd.classList.remove('open');return;}
+  const m=clients.filter(c=>c.n.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  const exact=clients.some(c=>c.n.toLowerCase()===q.toLowerCase());
+  let html=m.map(c=>`<div class="ac-item" onmousedown="selClient('${e(c.n)}','${e(c.g||'')}')"><div class="ac-name">${hl(c.n,q)}</div><div class="ac-gstin">${c.g||'<span style="color:#8a99b0">No GSTIN saved</span>'}</div></div>`).join('');
+  if(!exact) html+=`<div class="ac-new" onmousedown="newClient('${e(q)}')">＋ Use "${e(q)}"</div>`;
+  dd.innerHTML=html; dd.classList.add('open');
+}
+function hl(t,q){const i=t.toLowerCase().indexOf(q.toLowerCase());if(i<0)return e(t);return e(t.substring(0,i))+`<mark style="background:#fef3c7;border-radius:2px">${e(t.substring(i,i+q.length))}</mark>`+e(t.substring(i+q.length));}
+function onClientKey(ev){
+  const items=document.getElementById('acDD').querySelectorAll('.ac-item,.ac-new');
+  if(ev.key==='ArrowDown'){ev.preventDefault();acI=Math.min(acI+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('sel',i===acI));}
+  else if(ev.key==='ArrowUp'){ev.preventDefault();acI=Math.max(acI-1,0);items.forEach((el,i)=>el.classList.toggle('sel',i===acI));}
+  else if(ev.key==='Enter'&&acI>=0){ev.preventDefault();items[acI].dispatchEvent(new Event('mousedown'));}
+  else if(ev.key==='Escape') document.getElementById('acDD').classList.remove('open');
+}
+function selClient(n,g){document.getElementById('clientName').value=n;document.getElementById('clientGSTIN').value=g;document.getElementById('acBadge').style.display='inline-block';document.getElementById('gstinSaveBtn').style.display='none';document.getElementById('acDD').classList.remove('open');}
+function newClient(n){document.getElementById('clientName').value=n;document.getElementById('acDD').classList.remove('open');document.getElementById('gstinSaveBtn').style.display='inline-block';}
+function onGSTINType(){const n=document.getElementById('clientName').value.trim();const isNew=!clients.some(c=>c.n.toLowerCase()===n.toLowerCase());document.getElementById('gstinSaveBtn').style.display=(n&&isNew)?'inline-block':'none';}
+document.addEventListener('click',ev=>{if(!document.getElementById('clientName').contains(ev.target)&&!document.getElementById('acDD').contains(ev.target))document.getElementById('acDD').classList.remove('open');});
+async function saveGSTIN(){
+  const n=document.getElementById('clientName').value.trim(),g=document.getElementById('clientGSTIN').value.trim().toUpperCase();
+  if(!n)return;
+  await fetch('/api/billing/save-gstin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,gstin:g})});
+  clients=clients.filter(c=>c.n.toLowerCase()!==n.toLowerCase());clients.push({n,g});clients.sort((a,b)=>a.n.localeCompare(b.n));
+  document.getElementById('gstinSaveBtn').style.display='none';document.getElementById('acBadge').style.display='inline-block';
+  showToast('✓ GSTIN saved');
+}
+
+document.getElementById('firmName').addEventListener('change',function(){document.getElementById('firmOtherWrap').style.display=this.value==='Other'?'block':'none';});
+
+function toggleFiling(){
+  const c2=document.querySelector('input[name="cra2"]:checked')?.value,c4=document.querySelector('input[name="cra4"]:checked')?.value;
+  const s2=c2==='JAA',s4=c4==='JAA';
+  document.getElementById('srnCRA2Wrap').style.display=s2?'block':'none';
+  document.getElementById('cra2CostWrap').style.display=s2?'block':'none';
+  document.getElementById('srnCRA4Wrap').style.display=s4?'block':'none';
+  document.getElementById('cra4CostWrap').style.display=s4?'block':'none';
+  if(!s2){document.getElementById('srnCRA2').value='';document.getElementById('cra2Cost').value='';}
+  if(!s4){document.getElementById('srnCRA4').value='';document.getElementById('cra4Cost').value='';}
+  document.getElementById('srnRow').style.display=(s2||s4)?'grid':'none';
+  document.getElementById('costRow').style.display=(s2||s4)?'grid':'none';
+}
+
+function gv(id){return document.getElementById(id)?.value||'';}
+function rv(nm){return document.querySelector(`input[name="${nm}"]:checked`)?.value||'—';}
+function collectData(){
+  return{firm:gv('firmName')==='Other'?(gv('firmOther')||''):gv('firmName'),clientName:gv('clientName'),clientAddr:gv('clientAddr'),clientGSTIN:gv('clientGSTIN'),taxType:rv('taxType')==='CGST_SGST'?'CGST & SGST':'IGST',auditDate:gv('auditDate'),numItems:gv('numItems'),udin:rv('udin'),firstTime:rv('firstTime'),fy:gv('fy'),serviceDesc:gv('serviceDesc'),xbrl:gv('xbrl'),partner1:gv('partner1'),partner2:gv('partner2'),trainee1:gv('trainee1'),trainee2:gv('trainee2'),trainee3:gv('trainee3'),months:[gv('m1'),gv('m2'),gv('m3'),gv('m4')].filter(Boolean).join(', '),tOOP1:gv('tOOP1'),tOOP2:gv('tOOP2'),tOOP3:gv('tOOP3'),pOOP1:gv('pOOP1'),pOOP2:gv('pOOP2'),cra2By:rv('cra2'),cra4By:rv('cra4'),srnCRA2:gv('srnCRA2'),srnCRA4:gv('srnCRA4'),cra2Cost:gv('cra2Cost'),cra4Cost:gv('cra4Cost'),contactName:gv('contactName'),contactDesig:gv('contactDesig'),advicePartner:gv('advicePartner'),adviceDate:gv('adviceDate'),additionalInfo:gv('additionalInfo')};
+}
+
+async function submitDraft(){
+  const data=collectData();
+  if(!data.clientName.trim()){showToast('⚠ Please enter a client name',true);return;}
+  const btn=document.getElementById('submitBtn');
+  btn.textContent='Submitting…';btn.disabled=true;
+  try{
+    const r=await fetch('/api/billing/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})});
+    const j=await r.json();
+    if(j.ok){localStorage.removeItem(LS_KEY);document.getElementById('successOverlay').classList.add('show');}
+    else showToast('Error: '+(j.error||'Try again'),true);
+  }catch{showToast('Network error. Try again.',true);}
+  btn.textContent='Submit Billing Advice →';btn.disabled=false;
+}
+
+function clearForm(){
+  if(!confirm('Clear all fields?'))return;
+  document.querySelectorAll('input[type=text],input[type=number],input[type=date],textarea,select').forEach(el=>el.value='');
+  document.getElementById('adviceDate').valueAsDate=new Date();
+  document.getElementById('firmOtherWrap').style.display='none';
+  document.getElementById('srnRow').style.display='none';document.getElementById('costRow').style.display='none';
+  document.getElementById('acBadge').style.display='none';document.getElementById('gstinSaveBtn').style.display='none';
+  document.getElementById('saveIndicator').textContent='Start filling — progress auto-saves as you type';
+  document.getElementById('saveIndicator').style.color='#8a99b0';
+  localStorage.removeItem(LS_KEY);
+}
+function showToast(msg,isErr=false){const t=document.getElementById('ba-toast');t.textContent=msg;t.style.background=isErr?'#dc2626':'#0d2647';t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2500);}
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+{% endblock %}

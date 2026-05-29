@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Documents — JAA{% endblock %}
+{% block content %}
+<div class="topbar">
+  <span class="topbar-title">📁 T1 / T5 Documents</span>
+  <span class="topbar-sub">Internship joining & completion forms</span>
+  <input type="text" id="search-docs" class="form-control" placeholder="🔍 Search employee..."
+         style="margin-left:auto;width:220px;padding:7px 12px" oninput="filterDocs()">
+</div>
+<div class="page-content">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">👥 All Staff Documents</span>
+      <span class="badge badge-navy">{{ emp_docs|length }} employees</span>
+    </div>
+    <div style="padding:10px 20px 0;font-size:12.5px;color:var(--text-light)">
+      ℹ️ T1 &amp; T5 upload is available for <strong>Interns only</strong>. Uploading T5 will automatically mark the intern as <span style="color:#dc2626;font-weight:600">Inactive</span> — their internship is considered complete and they will lose access.
+    </div>
+    <div class="table-wrap">
+      <table id="docs-table">
+        <thead><tr>
+          <th>Employee</th><th>Role</th><th>Status</th>
+          <th>T1 (Joining)</th><th>T5 (Completion)</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          {% for e in emp_docs %}
+          <tr>
+            <td>
+              <div style="font-weight:600">{{ e.full_name }}</div>
+              <div style="font-size:12px;color:var(--text-light)">{{ e.emp_id }}</div>
+            </td>
+            <td><span class="badge badge-navy">{{ e.role }}</span></td>
+            <td>
+              {% if e.status=='Active' %}<span class="badge badge-success">● Active</span>
+              {% elif e.status=='Inactive' %}<span class="badge badge-warning">● Inactive</span>
+              {% else %}<span class="badge badge-gray">● {{ e.status }}</span>{% endif %}
+            </td>
+            <td>
+              {% if e.t1_exists %}
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="badge badge-success">✓ Uploaded</span>
+                <a href="/admin/documents/view/t1/{{ e.emp_id }}" target="_blank" class="btn btn-ghost btn-sm">👁 View</a>
+              </div>
+              {% else %}
+              <span class="badge badge-gray">Not uploaded</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if e.t5_exists %}
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="badge badge-success">✓ Uploaded</span>
+                <a href="/admin/documents/view/t5/{{ e.emp_id }}" target="_blank" class="btn btn-ghost btn-sm">👁 View</a>
+              </div>
+              {% else %}
+              <span class="badge badge-gray">Not uploaded</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if e.role == 'Intern' %}
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm"
+                        onclick="openUpload('{{ e.emp_id }}','{{ e.full_name }}','t1')">⬆ T1</button>
+                {% if not e.t5_exists %}
+                <button class="btn btn-sm" style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d"
+                        onclick="openUpload('{{ e.emp_id }}','{{ e.full_name }}','t5')">⬆ T5</button>
+                {% else %}
+                <span style="font-size:11px;color:#16a34a;font-weight:600">✔ T5 Done<br><span style="color:#dc2626">Intern Inactive</span></span>
+                {% endif %}
+              </div>
+              {% else %}
+              <span style="font-size:12px;color:var(--text-light);font-style:italic">N/A — Interns only</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="upload-title">Upload Document</span>
+      <button class="modal-close" onclick="closeModal('upload-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="upload-emp-id">
+      <input type="hidden" id="upload-type">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        📄 Only PDF files accepted · Max 10 MB
+      </div>
+      <div class="form-group">
+        <label class="form-label">Employee</label>
+        <input class="form-control" id="upload-emp-name" readonly style="background:var(--surface)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select PDF File *</label>
+        <input type="file" class="form-control" id="upload-file" accept=".pdf">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('upload-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitUpload()">⬆ Upload</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterDocs() {
+  const q = document.getElementById('search-docs').value.toLowerCase();
+  document.querySelectorAll('#docs-table tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function openUpload(empId, empName, type) {
+  document.getElementById('upload-emp-id').value  = empId;
+  document.getElementById('upload-emp-name').value = empName;
+  document.getElementById('upload-type').value    = type;
+  document.getElementById('upload-title').textContent =
+    `⬆ Upload ${type.toUpperCase()} — ${empName}`;
+  document.getElementById('upload-file').value = '';
+  openModal('upload-modal');
+}
+
+async function submitUpload() {
+  const empId = document.getElementById('upload-emp-id').value;
+  const type  = document.getElementById('upload-type').value;
+  const file  = document.getElementById('upload-file').files[0];
+  if (!file) { toast('Please select a PDF file.','warning'); return; }
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('Only PDF files accepted.','warning'); return; }
+  const fd = new FormData();
+  fd.append('emp_id', empId);
+  fd.append('file', file);
+  const url = type === 't1' ? '/api/documents/upload-t1' : '/api/documents/upload-t5';
+  const r = await fetch(url, {method:'POST', body:fd}).then(x=>x.json());
+  if (r.ok) {
+    toast(`${type.toUpperCase()} uploaded successfully!`, 'success');
+    closeModal('upload-modal');
+    setTimeout(()=>location.reload(), 800);
+  } else {
+    toast(r.msg || r.error || 'Upload failed.', 'error');
+  }
+}
+</script>
+{% endblock %}
