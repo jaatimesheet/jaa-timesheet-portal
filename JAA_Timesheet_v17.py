@@ -3397,6 +3397,85 @@ def export_to_csv(filepath: str, emp_id=None, filter_date=None) -> int:
 # MAIN APPLICATION
 # ════════════════════════════════════════════════════════════════════════════
 
+# ─── GUI imports (only when running as desktop app, not when imported by Flask) ─
+import sys as _sys
+_GUI_MODE = "__main__" in _sys.modules and _sys.modules["__main__"].__spec__ is None \
+            or "tkinter" in _sys.modules \
+            or not any(m in _sys.modules for m in ("flask", "gunicorn", "werkzeug"))
+
+# Always try to import tkinter — but if it fails (e.g. on Render server),
+# create dummy stubs so the module can still be imported for DB functions.
+try:
+    import tkinter as tk
+    import tkinter.ttk as ttk
+except Exception:
+    class _StubWidget:
+        def __init__(self, *a, **kw): pass
+        def pack(self, *a, **kw): pass
+        def grid(self, *a, **kw): pass
+        def place(self, *a, **kw): pass
+        def bind(self, *a, **kw): pass
+        def config(self, *a, **kw): pass
+        def configure(self, *a, **kw): pass
+        def get(self, *a, **kw): return ""
+        def set(self, *a, **kw): pass
+        def destroy(self, *a, **kw): pass
+        def focus_set(self, *a, **kw): pass
+        def winfo_children(self): return []
+        def winfo_rootx(self): return 0
+        def winfo_rooty(self): return 0
+        def winfo_width(self): return 0
+        def winfo_reqwidth(self): return 0
+        def winfo_height(self): return 0
+        def after(self, *a, **kw): pass
+        def mainloop(self, *a, **kw): pass
+        def withdraw(self, *a, **kw): pass
+        def deiconify(self, *a, **kw): pass
+        def title(self, *a, **kw): pass
+        def geometry(self, *a, **kw): pass
+        def resizable(self, *a, **kw): pass
+        def protocol(self, *a, **kw): pass
+        def overrideredirect(self, *a, **kw): pass
+        def lift(self, *a, **kw): pass
+        def update(self, *a, **kw): pass
+        def update_idletasks(self, *a, **kw): pass
+        def bbox(self, *a, **kw): return (0,0,0,0)
+        def yview(self, *a, **kw): pass
+        def yview_scroll(self, *a, **kw): pass
+        def xview(self, *a, **kw): pass
+        def create_window(self, *a, **kw): return 0
+        def itemconfig(self, *a, **kw): pass
+        def delete(self, *a, **kw): pass
+        def insert(self, *a, **kw): pass
+        def see(self, *a, **kw): pass
+        def selection_clear(self, *a, **kw): pass
+        def selection_set(self, *a, **kw): pass
+        def curselection(self): return ()
+        def size(self): return 0
+        def tag_configure(self, *a, **kw): pass
+        def columnconfigure(self, *a, **kw): pass
+        def rowconfigure(self, *a, **kw): pass
+        def __getitem__(self, k): return ""
+        def __setitem__(self, k, v): pass
+
+    class _TkModule:
+        END="end"; BOTH="both"; LEFT="left"; RIGHT="right"; TOP="top"
+        BOTTOM="bottom"; X="x"; Y="y"; W="w"; E="e"; N="n"; S="s"
+        NW="nw"; NE="ne"; SW="sw"; SE="se"; FLAT="flat"; RAISED="raised"
+        SUNKEN="sunken"; GROOVE="groove"; RIDGE="ridge"; WORD="word"
+        CHAR="char"; NORMAL="normal"; DISABLED="disabled"; ACTIVE="active"
+        HORIZONTAL="horizontal"; VERTICAL="vertical"; BROWSE="browse"
+        MULTIPLE="multiple"; EXTENDED="extended"; SINGLE="single"
+        TRUE=True; FALSE=False; ROUND="round"; BUTT="butt"
+        def __getattr__(self, name):
+            return type(name, (_StubWidget,), {})
+        def StringVar(self, *a, **kw): return _StubWidget()
+        def IntVar(self, *a, **kw): return _StubWidget()
+        def BooleanVar(self, *a, **kw): return _StubWidget()
+        def DoubleVar(self, *a, **kw): return _StubWidget()
+
+    tk = _TkModule()
+    ttk = _TkModule()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
