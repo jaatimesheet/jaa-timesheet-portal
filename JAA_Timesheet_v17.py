@@ -17,8 +17,8 @@ v3.0 Enhancements:
 """
 
 import sqlite3, os, sys, re, csv, shutil, hashlib, threading, json, smtplib, logging
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+
+
 from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 from pathlib import Path
