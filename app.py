@@ -4348,6 +4348,64 @@ def api_billing_save_gstin():
 def error_page():
     return render_template("error.html", msg=request.args.get("msg", "Unknown error"))
 
+# ── Startup seed (runs at import time — works with gunicorn on Render) ────────
+def _startup_seed():
+    """Initialise all branch DBs and seed employees when the app boots.
+    Called at module level so Render/gunicorn picks it up on every restart.
+    """
+    if not DB_READY:
+        print(f"  STARTUP WARNING: JAA_Timesheet_v17.py not found — skipping seed.")
+        return
+    try:
+        init_master_db()
+        print("  ✓ Master DB ready (startup seed).")
+    except Exception as e:
+        print(f"  Master DB warning (startup seed): {e}")
+
+    for bkey, blabel in BRANCHES.items():
+        try:
+            switch_branch_db(bkey)
+            init_db()
+            # Column migrations
+            import sqlite3 as _sq
+            _bc = _sq.connect(str(_jaa.DB_PATH))
+            _bc.row_factory = _sq.Row
+            _emp_cols = [r[1] for r in _bc.execute("PRAGMA table_info(employees)").fetchall()]
+            _att_cols = [r[1] for r in _bc.execute("PRAGMA table_info(attendance_log)").fetchall()]
+            if "date_of_birth" not in _emp_cols:
+                _bc.execute("ALTER TABLE employees ADD COLUMN date_of_birth TEXT")
+            if "gstin" not in _emp_cols:
+                _bc.execute("ALTER TABLE employees ADD COLUMN gstin TEXT DEFAULT ''")
+            if "session_date" not in _att_cols:
+                _bc.execute("ALTER TABLE attendance_log ADD COLUMN session_date TEXT")
+            _task_tables = [r[0] for r in _bc.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'"
+            ).fetchall()]
+            if _task_tables:
+                _task_cols = [r[1] for r in _bc.execute("PRAGMA table_info(tasks)").fetchall()]
+                if "task_type" not in _task_cols:
+                    _bc.execute("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'Regular'")
+            _bc.commit(); _bc.close()
+            _migrate_billing()
+            if hasattr(_jaa, "seed_learning_categories"):
+                _jaa.seed_learning_categories()
+            if hasattr(_jaa, "seed_work_mapping"):
+                _jaa.seed_work_mapping(overwrite=True)
+            seed_birthdays()
+            auto_monthly_backup()
+            _check_intern_lifecycle()
+            if hasattr(_jaa, "check_overdue_notifications"):
+                n = _jaa.check_overdue_notifications()
+                if n:
+                    print(f"    ✓ {n} overdue notification(s) created")
+            print(f"  ✓ {blabel} seeded (startup seed).")
+        except Exception as e:
+            import traceback
+            print(f"  ✗ {blabel} seed ERROR (startup): {e}")
+            traceback.print_exc()
+
+_startup_seed()
+
 # ── Startup ───────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import socket
