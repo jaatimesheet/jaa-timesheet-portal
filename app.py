@@ -920,9 +920,6 @@ def api_checkout():
     now   = datetime.now()
     data  = request.get_json() or {}
 
-    if is_timesheet_locked(str(today), role="user"):
-        return jsonify({"ok": False, "error": "Timesheet is locked for today."})
-
     # 1. Verify check-in exists — always use earliest row for today
     try:
         with _jaa.get_conn() as conn:
@@ -1003,8 +1000,6 @@ def api_checkout():
 def api_save_entries():
   try:
     emp  = cur_emp(); data = request.get_json() or {}; today = date.today()
-    if is_timesheet_locked(str(today), role="user"):
-        return jsonify({"ok": False, "error": "Timesheet locked."})
     rows = []
     for e in data.get("entries", []):
         if not e.get("work_category"): continue
