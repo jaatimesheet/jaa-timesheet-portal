@@ -99,7 +99,7 @@ def save_config(cfg: dict):
 LOCK_DAY     = 27   # lock kicks in from this day of the month onwards
 GRACE_DAYS   = 7    # employees can edit entries up to this many days old
 
-def is_timesheet_locked(entry_date: str = None, role: str = "user") -> bool:
+def is_timesheet_locked(entry_date: str = None, role: str = "user", attendance: bool = False) -> bool:
     """
     Returns True if the timesheet entry should be locked for editing.
 
@@ -112,6 +112,8 @@ def is_timesheet_locked(entry_date: str = None, role: str = "user") -> bool:
     """
     if role == "admin":
         return False
+    if attendance:
+        return False  
     today     = date.today()
     grace_cutoff = today - timedelta(days=GRACE_DAYS)
 
