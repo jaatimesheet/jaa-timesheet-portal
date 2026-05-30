@@ -872,8 +872,11 @@ def api_checkin():
     now   = datetime.now()
 
     # Block check-in before 8:00 AM
-    if now.hour < 8:
-        return jsonify({"ok": False, "error": "Check In is only available from 8:00 AM onwards."})
+    from zoneinfo import ZoneInfo
+ist = ZoneInfo("Asia/Kolkata")
+now_ist = datetime.now(ist)
+if now_ist.hour < 8:
+    return jsonify({"ok": False, "error": "Check In is only available from 8:00 AM onwards."})
 
     try:
         with _jaa.get_conn() as conn:
