@@ -81,8 +81,8 @@
             </div>
             {% else %}
             <button type="button" id="btn-checkin" onclick="doCheckIn(this)"
-              {% set now_hour = now.strftime('%H') | int %}
-              {% if now_hour < 8 %}disabled title="Check In available from 8:00 AM"
+             {% set now_hour = now.strftime('%H') | int %}
+             {% if now_hour < 2 %}disabled
               style="display:flex;align-items:center;gap:7px;background:#e5e7eb;color:#9ca3af;border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed"
               {% else %}
               style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer"
