@@ -781,7 +781,7 @@ def timesheet():
     emp   = cur_emp()
     today = date.today()
     on_leave, leave_reason = is_on_leave(emp["emp_id"], today)
-    locked = False  # attendance always allowed; only old entry editing is locked
+    locked  = is_timesheet_locked(str(today), role="user")
     entries = load_entries(emp_id=emp["emp_id"], filter_date=today)
     total   = sum(float(e.get("total_hrs") or 0) for e in entries)
     recent  = []
@@ -920,6 +920,9 @@ def api_checkout():
     now   = datetime.now()
     data  = request.get_json() or {}
 
+    if is_timesheet_locked(str(today), role="user", attendance=True):
+        return jsonify({"ok": False, "error": "Timesheet is locked for today."})
+      
     # 1. Verify check-in exists — always use earliest row for today
     try:
         with _jaa.get_conn() as conn:
@@ -1000,6 +1003,8 @@ def api_checkout():
 def api_save_entries():
   try:
     emp  = cur_emp(); data = request.get_json() or {}; today = date.today()
+    if is_timesheet_locked(str(today), role="user", attendance=True):
+        return jsonify({"ok": False, "error": "Timesheet locked."})
     rows = []
     for e in data.get("entries", []):
         if not e.get("work_category"): continue
