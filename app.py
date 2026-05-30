@@ -781,7 +781,7 @@ def timesheet():
     emp   = cur_emp()
     today = date.today()
     on_leave, leave_reason = is_on_leave(emp["emp_id"], today)
-    locked  = is_timesheet_locked(str(today), role="user")
+    locked  = False
     entries = load_entries(emp_id=emp["emp_id"], filter_date=today)
     total   = sum(float(e.get("total_hrs") or 0) for e in entries)
     recent  = []
